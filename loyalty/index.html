@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loyalty &mdash; The Problem</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<main class="page">
+
+  <nav class="sec-nav" role="navigation" aria-label="Section navigation">
+    <a href="../clv-contracts/" class="sec-nav__btn sec-nav__btn--back" aria-label="CLV Modeling">&larr; BACK</a>
+    <h1 class="sec-nav__header">Loyalty &mdash; The Problem</h1>
+    <a href="heckman/" class="sec-nav__btn sec-nav__btn--next" aria-label="Heckman Correction">NEXT &rarr;</a>
+  </nav>
+
+  <p class="problem-statement">When measuring loyalty program ROI, your &ldquo;best customers&rdquo; are often the ones who choose to join &mdash; creating a critical self-selection bias.</p>
+
+  <div class="content-card">
+    <h2>The Self-Selection Bias Problem</h2>
+    <p>A fundamental challenge emerges: simple member vs. non-member comparisons are scientifically invalid because the groups are not equivalent before the program even starts.</p>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-icon">&#9888;&#65039;</div>
+      <h3>The Core Issue</h3>
+      <p>High-value customers naturally gravitate toward loyalty programs. Comparing their spending to non-members inflates perceived program lift because these customers would spend more <strong>regardless</strong> of membership.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#128202;</div>
+      <h3>Why It Matters</h3>
+      <p>Biased measurements lead to misallocated marketing budgets, over-investment in ineffective programs, and missed opportunities to optimize what actually drives incremental value.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#127919;</div>
+      <h3>The Solution</h3>
+      <p>Advanced statistical methods can isolate true program impact by controlling for pre-existing customer characteristics and behaviors that influence both joining and spending.</p>
+    </div>
+  </div>
+
+  <div class="diagram-container">
+    <h4 class="diagram-title">The Bias Mechanism</h4>
+    <div class="flow-diagram">
+      <div class="flow-step">
+        <div class="step-num">FACTOR</div>
+        <div class="step-label">High Engagement</div>
+      </div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">
+        <div class="step-num">CAUSES</div>
+        <div class="step-label">Program Joining</div>
+      </div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step" style="border-color: var(--danger);">
+        <div class="step-num" style="color: var(--danger);">BIAS</div>
+        <div class="step-label">Inflated Lift</div>
+      </div>
+    </div>
+    <p style="text-align: center; margin-top: 16px; color: var(--text-muted); font-size: 13px;">The same factors that drive program enrollment also drive higher spending &mdash; creating spurious correlation.</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value">20-30%</div>
+      <div class="stat-label">Uncorrected &ldquo;Lift&rdquo; Estimate</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">35-40%</div>
+      <div class="stat-label">True Incrementality (After Correction)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">&pound;50M</div>
+      <div class="stat-label">TUI Revenue from Hybrid Segmentation</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-icon">&#128161;</div>
+    <div class="callout-content">
+      <h5>Key Insight</h5>
+      <p>Correcting for self-selection often reveals that true program incrementality is <strong>higher</strong> than na&iuml;ve estimates suggest &mdash; because loyal customers&rsquo; baseline spending was already elevated before joining.</p>
+    </div>
+  </div>
+
+</main>
+
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Share of Wallet &mdash; Huff Model</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+/* ---- Share of Wallet page-specific styles ---- */
+.huff .tab-container { display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 24px; }
+.huff .tab-btn { padding: 0.6rem 1.1rem; border: 1px solid var(--border); border-radius: 9999px; background: transparent; color: var(--text-muted); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s ease-in-out; font-family: inherit; }
+.huff .tab-btn:hover { border-color: var(--text); color: var(--text); }
+.huff .tab-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+.huff .tab-content { display: none; }
+.huff .tab-content.active { display: block; }
+
+.huff .content-card h3 { font-size: 15px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.4px; margin: 22px 0 8px 0; }
+.huff .content-card em { color: var(--accent); font-style: normal; font-weight: 600; }
+
+.huff .formula-box { background: var(--surface-soft); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 18px 22px; margin: 16px 0; font-family: "SF Mono","Fira Code",Consolas,monospace; font-size: 15px; line-height: 1.7; color: var(--accent); overflow-x: auto; text-align: center; }
+
+.huff .key-definition { background: var(--accent-soft); border-left: 3px solid var(--accent); padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 14px; line-height: 1.6; color: var(--text-muted); }
+.huff .key-definition strong { color: var(--text); }
+.huff .key-definition code { background: rgba(45, 212, 191, 0.12); color: var(--accent); padding: 0.1em 0.35em; border-radius: 3px; font-family: "SF Mono","Fira Code",Consolas,monospace; font-size: 12.5px; }
+
+.huff .interp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 12px 0; }
+.huff .interp-item { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 14px 16px; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.huff .interp-item strong { color: var(--text); font-weight: 700; display: block; margin-bottom: 4px; }
+.huff .interp-item small { font-size: 12.5px; color: var(--text-muted); }
+
+.huff .code-block { background: rgba(0,0,0,0.25); border: 1px solid var(--border-soft); border-radius: 8px; padding: 16px 20px; margin: 12px 0; font-family: "SF Mono","Fira Code",Consolas,monospace; font-size: 12.5px; line-height: 1.65; color: var(--accent); overflow-x: auto; white-space: pre-wrap; }
+
+.huff .content-card p code,
+.huff .tool-section p code { background: rgba(45, 212, 191, 0.12); color: var(--accent); padding: 0.1em 0.35em; border-radius: 3px; font-family: "SF Mono","Fira Code",Consolas,monospace; font-size: 12.5px; }
+
+.huff .sim-params { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0 20px; }
+.huff .param-item { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 14px 16px; }
+.huff .param-item label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+.huff .param-item input[type="range"] { width: 100%; accent-color: var(--accent); }
+.huff .param-item .param-val { display: block; margin-top: 6px; font-size: 15px; font-weight: 700; color: var(--accent); font-family: "SF Mono","Fira Code",Consolas,monospace; }
+
+.huff .sim-table-wrap { overflow-x: auto; margin: 12px 0 20px; }
+.huff .sim-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 520px; }
+.huff .sim-table th { padding: 8px 10px; text-align: left; font-size: 12px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+.huff .sim-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-soft); color: var(--text); }
+.huff .sim-table td.zip-cell { font-weight: 600; }
+.huff .sim-table input[type="number"] { width: 70px; padding: 5px 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-soft); border-radius: 4px; color: var(--text); font-family: inherit; font-size: 13px; }
+.huff .sim-table input[type="number"]:focus { outline: none; border-color: var(--accent); }
+
+.huff .sim-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 12px 0 20px; }
+.huff .summary-item { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 14px 16px; text-align: center; }
+.huff .summary-item strong { display: block; font-size: 12.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; }
+.huff .summary-item .summary-val { font-size: 22px; font-weight: 700; color: var(--text); font-family: "SF Mono","Fira Code",Consolas,monospace; }
+.huff .summary-item.accent .summary-val { color: var(--accent); }
+
+.huff .results-table th { padding: 8px 10px; text-align: left; font-size: 12px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+.huff .results-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-soft); color: var(--text); font-size: 13px; }
+.huff .results-table td.zip-cell { font-weight: 600; }
+.huff .results-table td.accent-cell { color: var(--accent); font-weight: 600; }
+.huff .results-table { width: 100%; border-collapse: collapse; min-width: 520px; }
+
+@media (max-width: 600px) {
+  .huff .sim-params { grid-template-columns: 1fr; }
+  .huff .formula-box { font-size: 13px; padding: 14px 16px; }
+  .huff .code-block { font-size: 11.5px; padding: 12px 14px; }
+}
+</style>
+</head>
+<body>
+
+<main class="page huff">
+
+  <nav class="sec-nav" role="navigation" aria-label="Section navigation">
+    <a href="../market-basket/" class="sec-nav__btn sec-nav__btn--back" aria-label="Market Basket">&larr; BACK</a>
+    <h1 class="sec-nav__header">Share of Wallet &mdash; Huff Model</h1>
+    <a href="../" class="sec-nav__btn sec-nav__btn--next" aria-label="Home">HOME &rarr;</a>
+  </nav>
+
+  <p class="problem-statement">From algebraic theory to BigQuery execution &mdash; estimate the probability a customer travels to each store, and compute share of wallet by geography.</p>
+
+  <div class="tab-container">
+    <button class="tab-btn active" data-tab="concept" type="button">1. Concept &amp; Math</button>
+    <button class="tab-btn" data-tab="execution" type="button">2. BigQuery Execution</button>
+    <button class="tab-btn" data-tab="report" type="button">3. Interactive Simulator</button>
+  </div>
+
+  <!-- Tab 1: Concept -->
+  <div id="tab-concept" class="tab-content active">
+    <div class="content-card">
+      <h2>At its Core: Just Algebra</h2>
+      <p>The Huff Model is not a &ldquo;black box.&rdquo; It calculates the probability that a customer at an origin (<em>i</em>) (like a home or zip code) will travel to a specific destination (<em>j</em>) (a store).</p>
+
+      <div class="formula-box">
+        P<sub>ij</sub> = A<sub>j</sub> / D<sub>ij</sub><sup>&beta;</sup> &divide; &Sigma; (A<sub>k</sub> / D<sub>ik</sub><sup>&beta;</sup>)
+      </div>
+
+      <h3>The Variables</h3>
+
+      <div class="interp-grid">
+        <div class="interp-item">
+          <strong>A<sub>j</sub> (Attractiveness)</strong>
+          <small>Store size (sq ft) or sales volume. Bigger is better.</small>
+        </div>
+        <div class="interp-item">
+          <strong>D<sub>ij</sub> (Distance)</strong>
+          <small>The friction. Further is worse.</small>
+        </div>
+        <div class="interp-item">
+          <strong>&beta; (Beta / Decay)</strong>
+          <small>How lazy are the customers?</small>
+        </div>
+        <div class="interp-item">
+          <strong>&beta; = 1.5</strong>
+          <small>They are willing to drive.</small>
+        </div>
+        <div class="interp-item">
+          <strong>&beta; = 2.5</strong>
+          <small>They only go to the closest store.</small>
+        </div>
+      </div>
+
+      <div class="key-definition">
+        <strong>Why SQL?</strong><br>
+        If you have the data (origins and destinations), you don&rsquo;t need expensive proprietary tools. You can run the math directly in BigQuery, Snowflake, or Redshift.
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Execution -->
+  <div id="tab-execution" class="tab-content">
+    <div class="content-card">
+      <h2>The Workflow</h2>
+
+      <h3>Calibrate (BQML)</h3>
+      <p>Don&rsquo;t guess the Beta. Use logistic regression to find it. BQML effectively &ldquo;self-corrects&rdquo; for the difference between straight-line distance and drive time.</p>
+
+      <h3>The Matrix (Cross Join)</h3>
+      <p>Connect every zip code to every store using <code>ST_DISTANCE</code>. Optimize using <code>ST_DWITHIN</code> (e.g., limit to 50km).</p>
+
+      <h3>Calculate Probability</h3>
+      <p>Use window functions to sum the total utility per zip code.</p>
+
+      <div class="key-definition">
+        <strong>Note on Distance:</strong> Native SQL uses straight-line distance. Because we use BQML to calibrate, the model learns the friction of straight lines automatically. No OSRM required.
+      </div>
+
+      <h3>Step 1: Auto-Calibration with BQML</h3>
+      <p>Find the exact Beta (&beta;) and Alpha (&alpha;) from your sales history.</p>
+
+      <div class="code-block">CREATE OR REPLACE MODEL `project.dataset.huff_model`
+OPTIONS(model_type='LOGISTIC_REG', input_label_cols=['label']) AS
+SELECT
+    IF(visited_store_id = store_id, 1, 0) as label,
+    LN(distance_km) as log_distance, -- Input 1
+    LN(square_footage) as log_size   -- Input 2
+FROM `project.dataset.customer_store_matrix`
+WHERE distance_km &gt; 0;</div>
+
+      <h3>Step 2: The Prediction Query</h3>
+      <p>Apply the weights found above to predict future scenarios.</p>
+
+      <div class="code-block">WITH od_matrix AS (
+    SELECT
+        o.zip_code, s.store_id, o.spend_potential,
+        s.square_footage AS size,
+        ST_DISTANCE(o.geo, s.geo)/1000 AS dist_km
+    FROM zip_codes o
+    CROSS JOIN stores s
+    WHERE ST_DWITHIN(o.geo, s.geo, 50000) -- 50km Radius Optimization
+),
+utility_calc AS (
+    SELECT *,
+        -- Formula: Size^Alpha / Distance^Beta
+        (POW(size, 1.15) / POW(GREATEST(dist_km, 0.1), 2.1)) AS utility
+    FROM od_matrix
+)
+SELECT
+    zip_code, store_id,
+    utility / SUM(utility) OVER(PARTITION BY zip_code) AS market_share_pct
+FROM utility_calc;</div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Simulator -->
+  <div id="tab-report" class="tab-content">
+    <div class="content-card">
+      <h2>Interactive Huff Simulator</h2>
+      <p>All values below are computed live using the Huff formula from Tab 1. Adjust stores, distances, and parameters to see market shares and revenue predictions update in real time.</p>
+
+      <div class="key-definition">
+        <strong>Distance Note:</strong> This demo uses straight-line distances entered manually. In production with BigQuery, use <code>ST_DISTANCE()</code> for geodesic straight-line distance, or integrate with the Google Maps Distance Matrix API / OSRM for drive-time distances. When you calibrate &beta; using BQML (see Tab 2), the model automatically compensates for the difference between straight-line and actual driving distance.
+      </div>
+
+      <h3>Model Parameters</h3>
+      <div class="sim-params">
+        <div class="param-item">
+          <label for="huff-beta">&beta; (Distance Decay)</label>
+          <input type="range" min="0.5" max="4.0" step="0.1" value="2.0" id="huff-beta">
+          <span class="param-val" id="huff-beta-val">2.0</span>
+        </div>
+        <div class="param-item">
+          <label for="huff-alpha">&alpha; (Size Exponent)</label>
+          <input type="range" min="0.5" max="2.0" step="0.1" value="1.0" id="huff-alpha">
+          <span class="param-val" id="huff-alpha-val">1.0</span>
+        </div>
+      </div>
+
+      <h3>Stores</h3>
+      <div class="sim-table-wrap">
+        <table class="sim-table">
+          <thead>
+            <tr><th>Store</th><th>Sq Ft</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Our Store (104)</td><td><input type="number" class="huff-store-size" data-store="0" value="45000" min="1000" step="1000"></td></tr>
+            <tr><td>Competitor A</td><td><input type="number" class="huff-store-size" data-store="1" value="30000" min="1000" step="1000"></td></tr>
+            <tr><td>Competitor B</td><td><input type="number" class="huff-store-size" data-store="2" value="60000" min="1000" step="1000"></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Distance Matrix (km) &amp; Spend Potential</h3>
+      <p>Enter straight-line distance from each zip code to each store. All fields are editable.</p>
+      <div class="sim-table-wrap">
+        <table class="sim-table">
+          <thead>
+            <tr>
+              <th>Zip</th>
+              <th>Spend ($k)</th>
+              <th>&rarr; Store 104</th>
+              <th>&rarr; Comp A</th>
+              <th>&rarr; Comp B</th>
+            </tr>
+          </thead>
+          <tbody id="huff-distance-body">
+            <tr><td class="zip-cell">90210</td><td><input type="number" class="huff-spend" data-zip="0" value="1300" min="1"></td><td><input type="number" class="huff-dist" data-zip="0" data-store="0" value="2.1" min="0.1" step="0.1"></td><td><input type="number" class="huff-dist" data-zip="0" data-store="1" value="5.0" min="0.1" step="0.1"></td><td><input type="number" class="huff-dist" data-zip="0" data-store="2" value="8.2" min="0.1" step="0.1"></td></tr>
+            <tr><td class="zip-cell">90211</td><td><input type="number" class="huff-spend" data-zip="1" value="1000" min="1"></td><td><input type="number" class="huff-dist" data-zip="1" data-store="0" value="4.5" min="0.1" step="0.1"></td><td><input type="number" class="huff-dist" data-zip="1" data-store="1" value="3.2" min="0.1" step="0.1"></td><td><input type="number" class="huff-dist" data-zip="1" data-store="2" value="6.1" min="0.1" step="0.1"></td></tr>
+            <tr><td class="zip-cell">90212</td><td><input type="number" class="huff-spend" data-zip="2" value="750" min="1"></td><td><input type="number" class="huff-dist" data-zip="2" data-store="0" value="6.2" min="0.1" step="0.1"></td><td><input type="number" class="huff-dist" data-zip="2" data-store="1" value="2.8" min="0.1" step="0.1"></td><td><input type="number" class="huff-dist" data-zip="2" data-store="2" value="4.0" min="0.1" step="0.1"></td></tr>
+            <tr><td class="zip-cell">90213</td><td><input type="number" class="huff-spend" data-zip="3" value="500" min="1"></td><td><input type="number" class="huff-dist" data-zip="3" data-store="0" value="12.5" min="0.1" step="0.1"></td><td><input type="number" class="huff-dist" data-zip="3" data-store="1" value="9.0" min="0.1" step="0.1"></td><td><input type="number" class="huff-dist" data-zip="3" data-store="2" value="3.5" min="0.1" step="0.1"></td></tr>
+            <tr><td class="zip-cell">90214</td><td><input type="number" class="huff-spend" data-zip="4" value="300" min="1"></td><td><input type="number" class="huff-dist" data-zip="4" data-store="0" value="15.0" min="0.1" step="0.1"></td><td><input type="number" class="huff-dist" data-zip="4" data-store="1" value="11.0" min="0.1" step="0.1"></td><td><input type="number" class="huff-dist" data-zip="4" data-store="2" value="2.0" min="0.1" step="0.1"></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Computed Results</h3>
+      <div class="sim-summary">
+        <div class="summary-item"><strong>Store 104 Revenue</strong><span class="summary-val" id="huff-rev-0">&mdash;</span></div>
+        <div class="summary-item"><strong>Comp A Revenue</strong><span class="summary-val" id="huff-rev-1">&mdash;</span></div>
+        <div class="summary-item"><strong>Comp B Revenue</strong><span class="summary-val" id="huff-rev-2">&mdash;</span></div>
+        <div class="summary-item accent"><strong>Store 104 Market Share</strong><span class="summary-val" id="huff-share-0">&mdash;</span></div>
+      </div>
+
+      <h3>Zip Code Probability Breakdown</h3>
+      <div class="sim-table-wrap">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Zip</th>
+              <th>Spend ($k)</th>
+              <th>P(Store 104)</th>
+              <th>P(Comp A)</th>
+              <th>P(Comp B)</th>
+              <th>Rev &rarr; 104</th>
+            </tr>
+          </thead>
+          <tbody id="huff-results-body"></tbody>
+        </table>
+      </div>
+
+      <div class="formula-box">
+        <strong style="color: var(--text); font-family: system-ui, -apple-system, sans-serif;">Formula applied:</strong><br>
+        P<sub>ij</sub> = (Size<sub>j</sub><sup>&alpha;</sup> / Dist<sub>ij</sub><sup>&beta;</sup>) &divide; &Sigma;<sub>k</sub>(Size<sub>k</sub><sup>&alpha;</sup> / Dist<sub>ik</sub><sup>&beta;</sup>) &nbsp;|&nbsp; Revenue<sub>ij</sub> = P<sub>ij</sub> &times; Spend<sub>i</sub>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var app = document.querySelector('.huff');
+  if (!app) return;
+
+  /* Tabs */
+  var tabBtns = app.querySelectorAll('.tab-btn');
+  var tabContents = app.querySelectorAll('.tab-content');
+  for (var i = 0; i < tabBtns.length; i++) {
+    tabBtns[i].addEventListener('click', function() {
+      var id = this.getAttribute('data-tab');
+      for (var j = 0; j < tabBtns.length; j++) tabBtns[j].classList.remove('active');
+      for (var k = 0; k < tabContents.length; k++) tabContents[k].classList.remove('active');
+      this.classList.add('active');
+      var target = app.querySelector('#tab-' + id);
+      if (target) target.classList.add('active');
+    });
+  }
+
+  /* Huff simulator */
+  var storeNames = ['Store 104', 'Comp A', 'Comp B'];
+  var zipNames = ['90210', '90211', '90212', '90213', '90214'];
+
+  function getVal(sel, fb) {
+    var el = app.querySelector(sel);
+    return el ? (parseFloat(el.value) || fb) : fb;
+  }
+
+  function computeHuff() {
+    var beta = getVal('#huff-beta', 2.0);
+    var alpha = getVal('#huff-alpha', 1.0);
+
+    var storeSizes = [];
+    for (var s = 0; s < storeNames.length; s++) {
+      var el = app.querySelector('.huff-store-size[data-store="' + s + '"]');
+      storeSizes.push(el ? (parseFloat(el.value) || 1000) : 1000);
+    }
+
+    var zipSpends = [];
+    var distances = [];
+    for (var z = 0; z < zipNames.length; z++) {
+      var sp = app.querySelector('.huff-spend[data-zip="' + z + '"]');
+      zipSpends.push(sp ? (parseFloat(sp.value) || 1) : 1);
+      distances.push([]);
+      for (var s2 = 0; s2 < storeNames.length; s2++) {
+        var d = app.querySelector('.huff-dist[data-zip="' + z + '"][data-store="' + s2 + '"]');
+        var dv = d ? (parseFloat(d.value) || 0.1) : 0.1;
+        distances[z].push(Math.max(dv, 0.1));
+      }
+    }
+
+    var probs = [];
+    var revenues = [0, 0, 0];
+    var totalSpend = 0;
+    for (var z2 = 0; z2 < zipNames.length; z2++) {
+      var utils = [];
+      var sum = 0;
+      for (var s3 = 0; s3 < storeNames.length; s3++) {
+        var u = Math.pow(storeSizes[s3], alpha) / Math.pow(distances[z2][s3], beta);
+        utils.push(u);
+        sum += u;
+      }
+      probs.push([]);
+      for (var s4 = 0; s4 < storeNames.length; s4++) {
+        var p = sum > 0 ? utils[s4] / sum : 0;
+        probs[z2].push(p);
+        revenues[s4] += p * zipSpends[z2];
+      }
+      totalSpend += zipSpends[z2];
+    }
+
+    var bv = app.querySelector('#huff-beta-val');
+    var av = app.querySelector('#huff-alpha-val');
+    if (bv) bv.textContent = beta.toFixed(1);
+    if (av) av.textContent = alpha.toFixed(1);
+
+    for (var s5 = 0; s5 < storeNames.length; s5++) {
+      var re = app.querySelector('#huff-rev-' + s5);
+      if (re) re.textContent = '$' + Math.round(revenues[s5]).toLocaleString() + 'k';
+    }
+    var sh = app.querySelector('#huff-share-0');
+    if (sh) {
+      var share = totalSpend > 0 ? (revenues[0] / totalSpend * 100) : 0;
+      sh.textContent = share.toFixed(1) + '%';
+    }
+
+    var tbody = app.querySelector('#huff-results-body');
+    if (tbody) {
+      var html = '';
+      for (var z3 = 0; z3 < zipNames.length; z3++) {
+        var rev104 = probs[z3][0] * zipSpends[z3];
+        html +=
+          '<tr>' +
+          '<td class="zip-cell">' + zipNames[z3] + '</td>' +
+          '<td>$' + zipSpends[z3].toLocaleString() + 'k</td>' +
+          '<td class="accent-cell">' + (probs[z3][0] * 100).toFixed(1) + '%</td>' +
+          '<td>' + (probs[z3][1] * 100).toFixed(1) + '%</td>' +
+          '<td>' + (probs[z3][2] * 100).toFixed(1) + '%</td>' +
+          '<td>$' + Math.round(rev104).toLocaleString() + 'k</td>' +
+          '</tr>';
+      }
+      tbody.innerHTML = html;
+    }
+  }
+
+  var inputs = app.querySelectorAll('#huff-beta, #huff-alpha, .huff-store-size, .huff-spend, .huff-dist');
+  for (var i2 = 0; i2 < inputs.length; i2++) {
+    inputs[i2].addEventListener('input', computeHuff);
+  }
+  computeHuff();
+});
+</script>
+
+</body>
+</html>

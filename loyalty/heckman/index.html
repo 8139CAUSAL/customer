@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loyalty &mdash; Heckman Correction</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+
+<main class="page">
+
+  <nav class="sec-nav" role="navigation" aria-label="Section navigation">
+    <a href="../" class="sec-nav__btn sec-nav__btn--back" aria-label="The Problem">&larr; BACK</a>
+    <h1 class="sec-nav__header">Loyalty &mdash; Heckman Correction</h1>
+    <a href="../cohort-matching/" class="sec-nav__btn sec-nav__btn--next" aria-label="Cohort Matching">NEXT &rarr;</a>
+  </nav>
+
+  <p class="problem-statement">The gold standard for addressing non-random selection bias &mdash; explicitly modeling the decision to join as a separate process from spending behavior.</p>
+
+  <div class="content-card">
+    <h2>Heckman Two-Step Correction</h2>
+    <p>The Heckman correction (or &ldquo;heckit&rdquo;) models why customers choose to join, then uses that model to correct the spending analysis. This isolates the true causal effect of program membership.</p>
+  </div>
+
+  <div class="accordion">
+
+    <div class="accordion-item">
+      <div class="accordion-header">
+        <h4><span class="num">1</span> Selection Equation</h4>
+        <span class="accordion-icon"></span>
+      </div>
+      <div class="accordion-content">
+        <div class="accordion-body">
+          <p>A <span class="highlight">probit model</span> that includes the entire population (both members and non-members) to determine who is likely to choose to join the rewards program.</p>
+          <ul>
+            <li>Predicts probability of joining based on observable characteristics</li>
+            <li>Variables include demographics, initial order type, location</li>
+            <li>Captures the &ldquo;selection mechanism&rdquo; that creates bias</li>
+            <li>Must include at least one variable that affects joining but not spending directly</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <div class="accordion-header">
+        <h4><span class="num">2</span> Outcome Equation</h4>
+        <span class="accordion-icon"></span>
+      </div>
+      <div class="accordion-content">
+        <div class="accordion-body">
+          <p>An <span class="highlight">Ordinary Least Squares (OLS) model</span> that measures actual spending outcomes, corrected for selection bias.</p>
+          <ul>
+            <li>Models spending as a function of membership and other factors</li>
+            <li>Includes the Inverse Mills Ratio from Step 1</li>
+            <li>Isolates the true causal effect of program membership</li>
+            <li>Provides unbiased estimates of program lift</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <div class="accordion-header">
+        <h4><span class="num">3</span> Inverse Mills Ratio</h4>
+        <span class="accordion-icon"></span>
+      </div>
+      <div class="accordion-content">
+        <div class="accordion-body">
+          <p>The <span class="highlight">Inverse Mills Ratio (&lambda;)</span> is the key innovation &mdash; a correction factor that captures the bias from non-random selection.</p>
+          <ul>
+            <li>Calculated from the selection equation&rsquo;s predicted probabilities</li>
+            <li>Added as a regressor in the outcome equation</li>
+            <li>Absorbs the correlation between joining tendency and spending</li>
+            <li>If &lambda; is statistically significant, selection bias exists</li>
+          </ul>
+          <div class="formula-box">
+            &lambda; = &phi;(Z&gamma;) / &Phi;(Z&gamma;)<br><br>
+            Where &phi; = standard normal PDF, &Phi; = standard normal CDF, Z = selection variables
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="diagram-container">
+    <h4 class="diagram-title">Heckman Two-Step Process</h4>
+    <div class="flow-diagram">
+      <div class="flow-step">
+        <div class="step-num">STEP 1</div>
+        <div class="step-label">Probit Model</div>
+      </div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">
+        <div class="step-num">EXTRACT</div>
+        <div class="step-label">Mills Ratio (&lambda;)</div>
+      </div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">
+        <div class="step-num">STEP 2</div>
+        <div class="step-label">OLS + &lambda;</div>
+      </div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step" style="border-color: var(--accent);">
+        <div class="step-num" style="color: var(--accent);">RESULT</div>
+        <div class="step-label">True Lift</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var headers = document.querySelectorAll('.accordion-header');
+  for (var i = 0; i < headers.length; i++) {
+    headers[i].addEventListener('click', function() {
+      this.parentElement.classList.toggle('open');
+    });
+  }
+});
+</script>
+
+</body>
+</html>

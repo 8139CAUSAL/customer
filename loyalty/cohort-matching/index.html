@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loyalty &mdash; Cohort Matching</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+
+<main class="page">
+
+  <nav class="sec-nav" role="navigation" aria-label="Section navigation">
+    <a href="../heckman/" class="sec-nav__btn sec-nav__btn--back" aria-label="Heckman Correction">&larr; BACK</a>
+    <h1 class="sec-nav__header">Loyalty &mdash; Cohort Matching</h1>
+    <a href="../sem/" class="sec-nav__btn sec-nav__btn--next" aria-label="SEM Analysis">NEXT &rarr;</a>
+  </nav>
+
+  <p class="problem-statement">Sophisticated matching techniques create analytically equivalent groups to measure program lift more conservatively.</p>
+
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-icon">&#128260;</div>
+      <h3>Pre-Join Matching</h3>
+      <p>Members and non-members are matched based on their behavior <strong>before</strong> the member joined &mdash; transactional characteristics, frequency, and order value.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#128101;</div>
+      <h3>Nearest Neighbor Matching</h3>
+      <p>Individual members are matched to analytically similar non-members, then behavior is compared in the post-period to isolate program effects.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#127899;&#65039;</div>
+      <h3>Control Variables</h3>
+      <p>Models control for external factors like location effects and household-level data to isolate the true program lift from confounding variables.</p>
+    </div>
+  </div>
+
+  <div class="accordion">
+
+    <div class="accordion-item">
+      <div class="accordion-header">
+        <h4><span class="num">1</span> Propensity Score Matching</h4>
+        <span class="accordion-icon"></span>
+      </div>
+      <div class="accordion-content">
+        <div class="accordion-body">
+          <p>Calculate a single score representing each customer&rsquo;s <span class="highlight">probability of joining</span>, then match members to non-members with similar scores.</p>
+          <ul>
+            <li>Reduces dimensionality &mdash; one score vs. many variables</li>
+            <li>Creates balanced comparison groups on observable characteristics</li>
+            <li>Assumes no unobserved confounders (unlike Heckman)</li>
+            <li>Works well when you have rich pre-join behavioral data</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <div class="accordion-header">
+        <h4><span class="num">2</span> Difference-in-Differences</h4>
+        <span class="accordion-icon"></span>
+      </div>
+      <div class="accordion-content">
+        <div class="accordion-body">
+          <p>Compare the <span class="highlight">change in spending</span> for members vs. matched non-members from pre- to post-period.</p>
+          <ul>
+            <li>Controls for time-invariant differences between groups</li>
+            <li>Accounts for external trends affecting everyone equally</li>
+            <li>True lift = (Member post &minus; Member pre) &minus; (Control post &minus; Control pre)</li>
+            <li>Requires parallel trends assumption to hold</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="quiz-container">
+    <h4 class="quiz-question">Why is pre-join matching important?</h4>
+    <div class="quiz-options" id="quiz1-options">
+      <div class="quiz-option" data-correct="false">
+        <span class="letter">A</span>
+        <span>It&rsquo;s easier to collect data before customers join</span>
+      </div>
+      <div class="quiz-option" data-correct="true">
+        <span class="letter">B</span>
+        <span>It ensures groups are comparable before the &ldquo;treatment&rdquo; (joining)</span>
+      </div>
+      <div class="quiz-option" data-correct="false">
+        <span class="letter">C</span>
+        <span>It allows larger sample sizes</span>
+      </div>
+      <div class="quiz-option" data-correct="false">
+        <span class="letter">D</span>
+        <span>It reduces data processing costs</span>
+      </div>
+    </div>
+    <div class="quiz-feedback" id="quiz1-feedback"></div>
+    <button class="quiz-btn" id="quiz1-btn" type="button">Check Answer</button>
+  </div>
+
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  /* Accordion */
+  var headers = document.querySelectorAll('.accordion-header');
+  for (var i = 0; i < headers.length; i++) {
+    headers[i].addEventListener('click', function() {
+      this.parentElement.classList.toggle('open');
+    });
+  }
+
+  /* Quiz */
+  var options = document.querySelectorAll('#quiz1-options .quiz-option');
+  var selected = null;
+  for (var j = 0; j < options.length; j++) {
+    options[j].addEventListener('click', function() {
+      if (this.classList.contains('correct') || this.classList.contains('incorrect')) return;
+      for (var k = 0; k < options.length; k++) options[k].classList.remove('selected');
+      this.classList.add('selected');
+      selected = this;
+    });
+  }
+  document.getElementById('quiz1-btn').addEventListener('click', function() {
+    var feedback = document.getElementById('quiz1-feedback');
+    if (!selected) {
+      feedback.className = 'quiz-feedback error';
+      feedback.textContent = 'Please select an answer first.';
+      return;
+    }
+    var isCorrect = selected.getAttribute('data-correct') === 'true';
+    selected.classList.remove('selected');
+    selected.classList.add(isCorrect ? 'correct' : 'incorrect');
+    feedback.className = 'quiz-feedback ' + (isCorrect ? 'success' : 'error');
+    feedback.textContent = isCorrect
+      ? 'Correct! Pre-join matching ensures the groups are analytically equivalent before membership, so any post-join difference can be attributed to the program.'
+      : 'Not quite. The key reason is that matching before the treatment begins creates groups that are comparable at baseline.';
+  });
+});
+</script>
+
+</body>
+</html>

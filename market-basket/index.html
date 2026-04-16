@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Basket Analysis</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+/* ---- Market Basket page-specific styles ---- */
+.mba { display: block; }
+
+.mba .tab-selector { display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 24px; }
+.mba .tab-btn { padding: 0.6rem 1.1rem; border: 1px solid var(--border); border-radius: 9999px; background: transparent; color: var(--text-muted); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s ease-in-out; font-family: inherit; }
+.mba .tab-btn:hover { border-color: var(--text); color: var(--text); }
+.mba .tab-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+.mba .tab-panel { display: none; }
+.mba .tab-panel.active { display: block; }
+
+.mba .content-card h3 { font-size: 16px; font-weight: 600; color: var(--accent); margin: 20px 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+.mba .content-card em { color: var(--accent); font-style: normal; font-weight: 600; }
+
+.mba .key-definition { background: var(--accent-soft); border-left: 3px solid var(--accent); padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.mba .key-definition p { font-size: 15px; line-height: 1.6; color: var(--text); margin: 0; }
+
+.mba .callout { background: var(--accent-soft); border-left: 3px solid var(--accent); padding: 16px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; font-size: 14px; line-height: 1.6; color: var(--text-muted); display: block; gap: 0; }
+.mba .callout strong { color: var(--text); }
+.mba .callout-title { font-weight: 700; font-size: 0.8rem; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); }
+.mba .callout.warning { background: rgba(251, 191, 36, 0.08); border-left-color: #fbbf24; }
+.mba .callout.warning .callout-title { color: #fbbf24; }
+
+.mba .formula-box { background: var(--surface-soft); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 16px 20px; margin: 16px 0; font-family: "SF Mono","Fira Code",Consolas,monospace; font-size: 14px; line-height: 1.8; color: var(--accent); overflow-x: auto; }
+.mba .formula-box .label { display: block; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+
+.mba .example-table-wrap { overflow-x: auto; margin: 16px 0; }
+.mba .example-table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--border-soft); }
+.mba .example-table th, .mba .example-table td { padding: 8px 12px; text-align: left; border: 1px solid var(--border-soft); font-size: 13px; }
+.mba .example-table th { background: rgba(255,255,255,0.1); color: var(--accent); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+.mba .example-table td { color: var(--text-muted); }
+.mba .example-table td.highlight { color: var(--accent); font-weight: 700; }
+
+.mba .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 16px 0; }
+.mba .stat-item { background: rgba(255,255,255,0.1); border: 1px solid var(--border-soft); border-radius: 8px; padding: 14px 16px; text-align: center; }
+.mba .stat-item .stat-value { font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 4px; overflow-wrap: anywhere; }
+.mba .stat-item .stat-label { font-size: 13px; color: var(--text-muted); line-height: 1.4; }
+
+.mba .tool-section h2 { color: var(--text); margin-bottom: 12px; font-size: 1.2rem; display: flex; align-items: center; gap: 12px; }
+.mba .step-number { background: var(--accent); color: var(--bg); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
+.mba .tool-section p { color: var(--text-muted); font-size: 14px; line-height: 1.6; margin-bottom: 12px; }
+.mba .tool-section p strong { color: var(--text); }
+
+.mba .file-upload-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.mba .file-upload-row input[type="file"] { font-size: 13px; color: var(--text-muted); }
+.mba .file-upload-row input[type="file"]::file-selector-button { background: rgba(255,255,255,0.1); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+.mba .file-upload-row input[type="file"]::file-selector-button:hover { border-color: var(--accent); color: var(--accent); }
+
+.mba .input-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; grid-template-columns: none; }
+.mba .input-row label { font-size: 14px; font-weight: 600; color: var(--text); min-width: 100px; }
+.mba .input-row input[type="text"],
+.mba .input-row input[type="date"] { padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; background: rgba(0,0,0,0.15); color: var(--text); transition: border-color 0.3s; flex: 1; min-width: 160px; }
+.mba .input-row input::placeholder { color: var(--text-muted); opacity: 0.6; }
+.mba .input-row input:focus { outline: none; border-color: var(--accent); }
+
+.mba .btn { font-family: inherit; font-size: 14px; font-weight: 600; padding: 12px 24px; border: none; border-radius: 999px; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.mba .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.mba .btn-primary { background: var(--accent); color: var(--bg); }
+.mba .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+.mba .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+.mba .btn-ghost:hover:not(:disabled) { border-color: var(--text); color: var(--text); }
+.mba .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+
+.mba .results-table-wrap { overflow-x: auto; margin: 16px 0; -webkit-overflow-scrolling: touch; }
+.mba .results-table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--border-soft); }
+.mba .results-table th, .mba .results-table td { padding: 10px 14px; text-align: center; border: 1px solid var(--border-soft); font-size: 13px; }
+.mba .results-table th { background: rgba(255,255,255,0.1); color: var(--accent); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+.mba .results-table td { color: var(--text-muted); }
+.mba .results-table td:first-child { text-align: left; font-weight: 600; color: var(--text); }
+.mba .results-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+
+.mba .canvas-wrap { position: relative; width: 100%; margin: 20px 0; }
+.mba .canvas-wrap canvas { width: 100%; height: 280px; display: block; border-radius: 8px; background: rgba(0,0,0,0.15); }
+.mba .canvas-wrap.bubble canvas { height: 320px; }
+
+.mba .data-table-wrap { overflow-x: auto; margin: 12px 0; max-height: 300px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.mba .hidden { display: none !important; }
+
+.mba .status-msg { font-size: 14px; font-weight: 600; color: #fbbf24; margin: 8px 0; padding: 0; border: none; background: none; display: block; }
+.mba .status-msg.success { color: #34d399; }
+.mba .status-msg.error { color: var(--danger); }
+
+.mba .interp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+.mba .interp-item { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 14px 16px; text-align: center; }
+.mba .interp-item .interp-value { font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+.mba .interp-item .interp-label { font-size: 13px; color: var(--text-muted); line-height: 1.4; }
+.mba .interp-item.good { border-color: #34d399; }
+.mba .interp-item.good .interp-value { color: #34d399; }
+.mba .interp-item.bad { border-color: var(--danger); }
+.mba .interp-item.bad .interp-value { color: var(--danger); }
+
+@media (max-width: 600px) {
+  .mba .tab-btn { font-size: 13px; padding: 0.5rem 0.9rem; }
+  .mba .stat-grid { grid-template-columns: 1fr 1fr; }
+  .mba .canvas-wrap canvas { height: 220px; }
+  .mba .canvas-wrap.bubble canvas { height: 260px; }
+  .mba .interp-grid { grid-template-columns: 1fr; }
+  .mba .input-row { flex-direction: column; align-items: stretch; }
+  .mba .input-row label { min-width: auto; }
+  .mba .formula-box { font-size: 12px; padding: 12px 14px; }
+}
+</style>
+</head>
+<body>
+
+<main class="page mba">
+
+  <nav class="sec-nav" role="navigation" aria-label="Section navigation">
+    <a href="../loyalty/prizm/" class="sec-nav__btn sec-nav__btn--back" aria-label="PRIZM Premier">&larr; BACK</a>
+    <h1 class="sec-nav__header">Market Basket Analysis</h1>
+    <a href="../share-of-wallet/" class="sec-nav__btn sec-nav__btn--next" aria-label="Share of Wallet">NEXT &rarr;</a>
+  </nav>
+
+  <p class="problem-statement">When customers buy product&nbsp;X, what else do they buy? Market basket analysis turns transaction data into actionable cross-sell and assortment insights using simple ratios.</p>
+
+  <div class="tab-selector">
+    <button class="tab-btn active" data-tab="math" type="button">The Math</button>
+    <button class="tab-btn" data-tab="tool" type="button">The Tool</button>
+    <button class="tab-btn" data-tab="second" type="button">Second Look</button>
+    <button class="tab-btn" data-tab="reading" type="button">Reading Results</button>
+  </div>
+
+  <!-- TAB 1: THE MATH -->
+  <div class="tab-panel active" id="mba-panel-math">
+    <div class="content-card">
+      <h2>Four Simple Ratios</h2>
+      <p>Market basket analysis answers one question: <strong>given that a customer bought X, what else did they buy?</strong> The entire method rests on four ratios computed from transaction-level data. No machine learning, no black boxes&mdash;just counting and dividing.</p>
+
+      <h3>Support</h3>
+      <div class="key-definition">
+        <p><strong>Support</strong> = (Baskets containing X &amp; Y) &divide; (Total baskets)</p>
+      </div>
+      <p>Support tells you how <em>common</em> the pair is. A high-support pair shows up in many transactions. But support alone can be misleading&mdash;two popular items will naturally co-occur often, even with no real affinity.</p>
+      <div class="formula-box">
+        <span class="label">Support</span>
+        Support(X &rarr; Y) = P(X &cap; Y) = count(X and Y) / count(all baskets)
+      </div>
+
+      <h3>Attached Rate (Confidence)</h3>
+      <div class="key-definition">
+        <p><strong>Attached Rate</strong> = (Baskets containing X &amp; Y) &divide; (Baskets containing X)</p>
+      </div>
+      <p>Given someone bought X, what fraction <em>also</em> bought Y? This is the conditional probability P(Y|X). A 40% attached rate means 4 out of every 10 buyers of X also pick up Y. In retail, this is the metric that drives cross-sell placement decisions.</p>
+      <div class="formula-box">
+        <span class="label">Attached Rate (Confidence)</span>
+        Confidence(X &rarr; Y) = P(Y | X) = count(X and Y) / count(X)
+      </div>
+
+      <h3>Affinity (Lift)</h3>
+      <div class="key-definition">
+        <p><strong>Affinity</strong> = Attached Rate &divide; P(Y)</p>
+      </div>
+      <p>Affinity (lift) controls for Y&rsquo;s overall popularity. If Y appears in 50% of all baskets, a 50% attached rate is meaningless&mdash;you&rsquo;d expect it by chance. Affinity &gt; 1 means the pair co-occurs <em>more</em> than chance. Affinity &lt; 1 means they co-occur <em>less</em> than chance (substitutes or repellers).</p>
+      <div class="formula-box">
+        <span class="label">Affinity (Lift)</span>
+        Lift(X &rarr; Y) = P(Y | X) / P(Y) = Support(X,Y) / [P(X) &times; P(Y)]
+      </div>
+
+      <h3>Cherry Pick Rate</h3>
+      <div class="key-definition">
+        <p><strong>Cherry Pick Rate</strong> = (Baskets containing Y but not X) &divide; (Baskets containing Y)</p>
+      </div>
+      <p>Of all buyers of Y, how many bought Y <em>without</em> X? A high cherry pick rate means Y has strong standalone demand and does not depend on X for traffic. A low cherry pick rate suggests Y is primarily an add-on to X.</p>
+      <div class="formula-box">
+        <span class="label">Cherry Pick Rate</span>
+        Cherry Pick(Y given X) = count(Y without X) / count(Y) = 1 &minus; P(X | Y)
+      </div>
+    </div>
+
+    <div class="content-card">
+      <h2>Worked Example</h2>
+      <p>Imagine 100 baskets. Product X appears in 40 baskets. Product Y appears in 30 baskets. Both X and Y appear together in 20 baskets.</p>
+
+      <div class="example-table-wrap">
+        <table class="example-table">
+          <thead><tr><th>Metric</th><th>Calculation</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>Support</td><td>20 / 100</td><td class="highlight">0.20 (20%)</td></tr>
+            <tr><td>Attached Rate</td><td>20 / 40</td><td class="highlight">0.50 (50%)</td></tr>
+            <tr><td>P(Y)</td><td>30 / 100</td><td>0.30 (30%)</td></tr>
+            <tr><td>Affinity (Lift)</td><td>0.50 / 0.30</td><td class="highlight">1.67&times;</td></tr>
+            <tr><td>Cherry Pick</td><td>(30 &minus; 20) / 30</td><td class="highlight">0.33 (33%)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <div class="callout-title">Interpretation</div>
+        <strong>Affinity of 1.67</strong> means buyers of X are 67% more likely to also buy Y than a random customer. The <strong>attached rate of 50%</strong> means half of X-buyers also grab Y. The <strong>cherry pick rate of 33%</strong> means a third of Y-buyers get Y without X&mdash;Y has moderate standalone demand.
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: THE TOOL -->
+  <div class="tab-panel" id="mba-panel-tool">
+
+    <div class="tool-section">
+      <h2><span class="step-number">1</span> Upload Transaction Data</h2>
+      <p>Upload a CSV with at least these columns: <strong>Transaction ID</strong>, <strong>Product</strong>, and optionally <strong>Date</strong> and <strong>Customer ID</strong>. Each row is one product in one transaction. The tool auto-detects column names.</p>
+
+      <div class="file-upload-row">
+        <input type="file" id="mba-fileInput" accept=".csv">
+      </div>
+
+      <div id="mba-fileStatus" class="status-msg hidden"></div>
+
+      <div id="mba-dataPreview" class="hidden">
+        <p><strong>Preview</strong> (first 5 rows):</p>
+        <div class="data-table-wrap" id="mba-previewTable"></div>
+      </div>
+
+      <div class="callout">
+        <div class="callout-title">Expected Format</div>
+        <strong>Minimum columns:</strong> one for the transaction/basket ID and one for the product name. Column names are flexible&mdash;the tool looks for keywords like &ldquo;transaction&rdquo;, &ldquo;order&rdquo;, &ldquo;basket&rdquo;, &ldquo;product&rdquo;, &ldquo;item&rdquo;, &ldquo;sku&rdquo;. If columns can&rsquo;t be detected, you&rsquo;ll see a warning.
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <h2><span class="step-number">2</span> Configure Analysis</h2>
+
+      <div class="input-row">
+        <label for="mba-dateStart">Start Date</label>
+        <input type="date" id="mba-dateStart">
+      </div>
+      <div class="input-row">
+        <label for="mba-dateEnd">End Date</label>
+        <input type="date" id="mba-dateEnd">
+      </div>
+      <div class="input-row">
+        <label for="mba-antecedent">Antecedent (X)</label>
+        <input type="text" id="mba-antecedent" placeholder="Type a product name&hellip;" list="mba-productList" autocomplete="off">
+        <datalist id="mba-productList"></datalist>
+      </div>
+      <div class="input-row">
+        <label for="mba-minSupport">Min Support</label>
+        <input type="text" id="mba-minSupport" placeholder="e.g. 0.01 (1%)" value="0.01">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="mba-runBtn" type="button" disabled>Run Analysis</button>
+        <button class="btn btn-ghost" id="mba-clearBtn" type="button">Clear</button>
+      </div>
+    </div>
+
+    <div class="tool-section" id="mba-resultsSection" style="display:none;">
+      <h2><span class="step-number">3</span> Results</h2>
+      <div class="stat-grid" id="mba-summaryStats"></div>
+      <div id="mba-resultsTableWrap" class="results-table-wrap"></div>
+      <h3>Top Pairs by Affinity</h3>
+      <div class="canvas-wrap">
+        <canvas id="mba-barCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: SECOND LOOK -->
+  <div class="tab-panel" id="mba-panel-second">
+    <div class="content-card">
+      <h2>Same-Customer Second Analysis</h2>
+      <p>The main tool looks at <strong>co-occurrence within the same basket</strong>. But sometimes you want a different question: among customers who bought X in one time period, what did they buy in a <em>different</em> time period?</p>
+      <div class="key-definition">
+        <p>This is useful for <strong>sequential cross-sell</strong>: if someone buys a camera in January, do they come back for a lens in February? For this analysis your CSV needs a <strong>Customer ID</strong> column and a <strong>Date</strong> column.</p>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <h2><span class="step-number">1</span> Define the Anchor Period</h2>
+      <p>Pick the time window where customers bought the anchor product (X). Only customers with X in this window are included.</p>
+
+      <div class="input-row">
+        <label for="mba-anchorStart">Anchor Start</label>
+        <input type="date" id="mba-anchorStart">
+      </div>
+      <div class="input-row">
+        <label for="mba-anchorEnd">Anchor End</label>
+        <input type="date" id="mba-anchorEnd">
+      </div>
+      <div class="input-row">
+        <label for="mba-anchorProduct">Anchor Product</label>
+        <input type="text" id="mba-anchorProduct" placeholder="Type a product name&hellip;" list="mba-productList2" autocomplete="off">
+        <datalist id="mba-productList2"></datalist>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <h2><span class="step-number">2</span> Define the Follow-Up Period</h2>
+      <p>What did those same customers buy during this second window?</p>
+
+      <div class="input-row">
+        <label for="mba-followStart">Follow-Up Start</label>
+        <input type="date" id="mba-followStart">
+      </div>
+      <div class="input-row">
+        <label for="mba-followEnd">Follow-Up End</label>
+        <input type="date" id="mba-followEnd">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="mba-runSecondBtn" type="button" disabled>Run Second Look</button>
+      </div>
+    </div>
+
+    <div class="tool-section" id="mba-secondResults" style="display:none;">
+      <h2><span class="step-number">3</span> Follow-Up Results</h2>
+      <div class="stat-grid" id="mba-secondSummary"></div>
+      <div id="mba-secondTableWrap" class="results-table-wrap"></div>
+      <div class="canvas-wrap">
+        <canvas id="mba-secondBarCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: READING RESULTS -->
+  <div class="tab-panel" id="mba-panel-reading">
+    <div class="content-card">
+      <h2>How to Read the Results</h2>
+      <p>The results table gives you four numbers for every product Y paired with your anchor X. Here is what each one means and how to act on it.</p>
+
+      <h3>Affinity (Lift)</h3>
+      <div class="interp-grid">
+        <div class="interp-item good">
+          <div class="interp-value">&gt; 1.0</div>
+          <div class="interp-label">Positive association. Buyers of X are more likely to buy Y than average. Good cross-sell candidate.</div>
+        </div>
+        <div class="interp-item">
+          <div class="interp-value">= 1.0</div>
+          <div class="interp-label">No association. X and Y co-occur at chance level. No actionable relationship.</div>
+        </div>
+        <div class="interp-item bad">
+          <div class="interp-value">&lt; 1.0</div>
+          <div class="interp-label">Negative association. X and Y repel each other (substitutes). Bundling them would likely fail.</div>
+        </div>
+      </div>
+
+      <h3>Attached Rate (Confidence)</h3>
+      <p>The raw probability that a buyer of X also buys Y. Use this to <strong>size the opportunity</strong>. An affinity of 3.0 sounds exciting, but if the attached rate is only 2%, the absolute volume of cross-sell is tiny. Look at both together:</p>
+      <div class="callout">
+        <div class="callout-title">The Sweet Spot</div>
+        <strong>High affinity + high attached rate</strong> = strong, high-volume cross-sell pair. These are your top priorities for placement, bundling, and recommendations.<br><br>
+        <strong>High affinity + low attached rate</strong> = strong association but niche. May be a hidden gem for targeted segments but not a mass play.<br><br>
+        <strong>Low affinity + high attached rate</strong> = both products are popular independently. Co-occurrence is expected, not driven by genuine affinity.
+      </div>
+
+      <h3>Support</h3>
+      <p>The share of all baskets containing both X and Y. Support acts as a <strong>frequency filter</strong>. Very low-support pairs (e.g. 0.1%) may have extreme affinity scores simply because they appeared together by accident in a tiny number of baskets. Set a minimum support threshold (we default to 1%) to filter out noise.</p>
+
+      <h3>Cherry Pick Rate</h3>
+      <p>Of all buyers of Y, what fraction bought Y <em>without</em> X? This tells you about Y&rsquo;s standalone strength:</p>
+      <div class="interp-grid">
+        <div class="interp-item">
+          <div class="interp-value">High</div>
+          <div class="interp-label">Y has strong independent demand. Customers seek it out regardless of X. Safe standalone item.</div>
+        </div>
+        <div class="interp-item">
+          <div class="interp-value">Low</div>
+          <div class="interp-label">Y is primarily bought alongside X. It depends on X for traffic. Risky to promote alone.</div>
+        </div>
+      </div>
+
+      <h3>The Bubble Chart</h3>
+      <p>When available, the bubble chart plots each product Y on two axes:</p>
+      <div class="key-definition">
+        <p><strong>X-axis:</strong> Attached Rate (how often Y appears alongside X).<br>
+        <strong>Y-axis:</strong> Affinity (Lift) &mdash; how much more than chance.<br>
+        <strong>Bubble size:</strong> Support (how frequent the pair is overall).<br><br>
+        Top-right, large bubbles are your strongest cross-sell opportunities. Bottom-left, small bubbles are noise.</p>
+      </div>
+
+      <div class="canvas-wrap bubble">
+        <canvas id="mba-bubbleCanvas"></canvas>
+      </div>
+
+      <div class="callout warning">
+        <div class="callout-title">Caveats</div>
+        <strong>Correlation &ne; Causation.</strong> Market basket analysis finds co-occurrence patterns, not causal relationships. Two products may co-occur because of a third factor (seasonal demand, promotions, store layout). Always validate with domain knowledge before making merchandising changes.<br><br>
+        <strong>Simpson&rsquo;s Paradox.</strong> Aggregate patterns can reverse when you segment by store, region, or customer type. If results seem surprising, drill down.
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var root = document.querySelector('.mba');
+  if (!root) return;
+
+  var _rawRows = [];
+  var _columns = [];
+  var _colMap = {};
+  var _products = [];
+
+  /* ── Tabs ── */
+  var btns = root.querySelectorAll('.tab-btn');
+  var panels = root.querySelectorAll('.tab-panel');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].addEventListener('click', function() {
+      var tab = this.getAttribute('data-tab');
+      for (var j = 0; j < btns.length; j++) btns[j].classList.remove('active');
+      for (var k = 0; k < panels.length; k++) panels[k].classList.remove('active');
+      this.classList.add('active');
+      var panel = root.querySelector('#mba-panel-' + tab);
+      if (panel) panel.classList.add('active');
+    });
+  }
+
+  /* ── CSV Parser ── */
+  function parseCSV(text) {
+    var lines = [];
+    var row = [];
+    var field = '';
+    var inQuote = false;
+    for (var i = 0; i < text.length; i++) {
+      var c = text[i];
+      var next = text[i + 1];
+      if (inQuote) {
+        if (c === '"' && next === '"') { field += '"'; i++; }
+        else if (c === '"') { inQuote = false; }
+        else { field += c; }
+      } else {
+        if (c === '"') { inQuote = true; }
+        else if (c === ',') { row.push(field.trim()); field = ''; }
+        else if (c === '\n' || (c === '\r' && next === '\n')) {
+          row.push(field.trim()); field = '';
+          if (row.length > 0 && row.some(function(f) { return f !== ''; })) lines.push(row);
+          row = [];
+          if (c === '\r') i++;
+        } else {
+          field += c;
+        }
+      }
+    }
+    row.push(field.trim());
+    if (row.length > 0 && row.some(function(f) { return f !== ''; })) lines.push(row);
+    return lines;
+  }
+
+  function csvToObjects(lines) {
+    if (lines.length < 2) return { headers: [], rows: [] };
+    var headers = lines[0].map(function(h) { return h.replace(/^\uFEFF/, ''); });
+    var rows = [];
+    for (var i = 1; i < lines.length; i++) {
+      var obj = {};
+      for (var j = 0; j < headers.length; j++) obj[headers[j]] = (lines[i][j] || '').trim();
+      rows.push(obj);
+    }
+    return { headers: headers, rows: rows };
+  }
+
+  function detectColumns(headers) {
+    var map = { transaction: null, product: null, date: null, customer: null };
+    var lower = headers.map(function(h) { return h.toLowerCase(); });
+    var tx = ['transaction', 'order', 'basket', 'receipt', 'invoice', 'txn', 'trans_id', 'order_id', 'basket_id'];
+    var pr = ['product', 'item', 'sku', 'upc', 'description', 'product_name', 'item_name'];
+    var dt = ['date', 'timestamp', 'datetime', 'order_date', 'trans_date', 'purchase_date'];
+    var cu = ['customer', 'cust', 'buyer', 'member', 'shopper', 'customer_id', 'cust_id', 'member_id', 'loyalty'];
+    function find(kw) {
+      for (var k = 0; k < kw.length; k++)
+        for (var h = 0; h < lower.length; h++)
+          if (lower[h].indexOf(kw[k]) !== -1) return headers[h];
+      return null;
+    }
+    map.transaction = find(tx);
+    map.product = find(pr);
+    map.date = find(dt);
+    map.customer = find(cu);
+    if (!map.transaction && !map.product && headers.length >= 2) {
+      map.transaction = headers[0];
+      map.product = headers[1];
+    }
+    return map;
+  }
+
+  function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function populateDatalist(id, items) {
+    var dl = root.querySelector('#' + id);
+    if (!dl) return;
+    dl.innerHTML = '';
+    for (var i = 0; i < items.length; i++) {
+      var opt = document.createElement('option');
+      opt.value = items[i];
+      dl.appendChild(opt);
+    }
+  }
+
+  function showPreview() {
+    var wrap = root.querySelector('#mba-dataPreview');
+    var table = root.querySelector('#mba-previewTable');
+    if (!wrap || !table) return;
+    wrap.classList.remove('hidden');
+    var html = '<table class="example-table"><thead><tr>';
+    for (var i = 0; i < _columns.length; i++) html += '<th>' + esc(_columns[i]) + '</th>';
+    html += '</tr></thead><tbody>';
+    var max = Math.min(5, _rawRows.length);
+    for (var r = 0; r < max; r++) {
+      html += '<tr>';
+      for (var c = 0; c < _columns.length; c++) html += '<td>' + esc(_rawRows[r][_columns[c]] || '') + '</td>';
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+    table.innerHTML = html;
+  }
+
+  /* ── File upload ── */
+  var fileInput = root.querySelector('#mba-fileInput');
+  if (fileInput) {
+    fileInput.addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var status = root.querySelector('#mba-fileStatus');
+      status.classList.remove('hidden', 'success', 'error');
+      status.textContent = 'Reading file\u2026';
+
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          var text = ev.target.result;
+          var lines = parseCSV(text);
+          var result = csvToObjects(lines);
+          _columns = result.headers;
+          _rawRows = result.rows;
+          _colMap = detectColumns(_columns);
+
+          if (!_colMap.transaction || !_colMap.product) {
+            status.classList.add('error');
+            status.textContent = 'Could not detect Transaction ID and Product columns. Check your CSV headers.';
+            return;
+          }
+
+          var pSet = {};
+          for (var i = 0; i < _rawRows.length; i++) {
+            var p = _rawRows[i][_colMap.product];
+            if (p) pSet[p] = true;
+          }
+          _products = Object.keys(pSet).sort();
+
+          populateDatalist('mba-productList', _products);
+          populateDatalist('mba-productList2', _products);
+
+          status.classList.add('success');
+          var detected = 'Detected: Transaction=' + _colMap.transaction + ', Product=' + _colMap.product;
+          if (_colMap.date) detected += ', Date=' + _colMap.date;
+          if (_colMap.customer) detected += ', Customer=' + _colMap.customer;
+          status.textContent = _rawRows.length + ' rows, ' + _products.length + ' products. ' + detected;
+
+          showPreview();
+
+          var runBtn = root.querySelector('#mba-runBtn');
+          if (runBtn) runBtn.disabled = false;
+          var runSecond = root.querySelector('#mba-runSecondBtn');
+          if (runSecond) runSecond.disabled = !(_colMap.customer && _colMap.date);
+        } catch (err) {
+          status.classList.add('error');
+          status.textContent = 'Parse error: ' + err.message;
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  /* ── Analysis ── */
+  function filterByDate(rows, startStr, endStr) {
+    if (!_colMap.date || (!startStr && !endStr)) return rows;
+    var start = startStr ? new Date(startStr) : null;
+    var end = endStr ? new Date(endStr) : null;
+    if (end) end.setHours(23, 59, 59, 999);
+    return rows.filter(function(r) {
+      var d = new Date(r[_colMap.date]);
+      if (isNaN(d.getTime())) return true;
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    });
+  }
+
+  function buildBaskets(rows) {
+    var baskets = {};
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var bId = r[_colMap.transaction];
+      var prod = r[_colMap.product];
+      if (!bId || !prod) continue;
+      if (!baskets[bId]) baskets[bId] = {};
+      baskets[bId][prod] = true;
+    }
+    return baskets;
+  }
+
+  function runAnalysis(baskets, antecedent, minSupport) {
+    var keys = Object.keys(baskets);
+    var totalBaskets = keys.length;
+    if (totalBaskets === 0) return [];
+
+    var xCount = 0;
+    for (var i = 0; i < keys.length; i++) if (baskets[keys[i]][antecedent]) xCount++;
+    if (xCount === 0) return [];
+
+    var coCount = {};
+    var yCount = {};
+    for (var k = 0; k < keys.length; k++) {
+      var basket = baskets[keys[k]];
+      var hasX = !!basket[antecedent];
+      for (var p in basket) {
+        yCount[p] = (yCount[p] || 0) + 1;
+        if (hasX && p !== antecedent) coCount[p] = (coCount[p] || 0) + 1;
+      }
+    }
+
+    var results = [];
+    for (var y in coCount) {
+      var support = coCount[y] / totalBaskets;
+      if (support < minSupport) continue;
+      var attachedRate = coCount[y] / xCount;
+      var pY = yCount[y] / totalBaskets;
+      var affinity = pY > 0 ? attachedRate / pY : 0;
+      var cherryPick = yCount[y] > 0 ? (yCount[y] - coCount[y]) / yCount[y] : 0;
+      results.push({
+        product: y, support: support, attachedRate: attachedRate,
+        affinity: affinity, cherryPick: cherryPick,
+        coOccurrences: coCount[y], yOccurrences: yCount[y]
+      });
+    }
+    results.sort(function(a, b) { return b.affinity - a.affinity; });
+    return results;
+  }
+
+  /* ── Canvas charts ── */
+  function setupCanvas(canvas) {
+    if (!canvas) return null;
+    var dpr = window.devicePixelRatio || 1;
+    var rect = canvas.getBoundingClientRect();
+    var w = rect.width, h = rect.height;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return { ctx: ctx, w: w, h: h };
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    if (h <= 0) return;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x, y + h);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function drawBarChartRaw(canvas, data, title, isPercent) {
+    var s = setupCanvas(canvas);
+    if (!s || data.length === 0) return;
+    var ctx = s.ctx, w = s.w, h = s.h;
+    var pad = { top: 36, right: 20, bottom: 80, left: 55 };
+    var chartW = w - pad.left - pad.right;
+    var chartH = h - pad.top - pad.bottom;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 14px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(title, w / 2, 22);
+    var maxVal = Math.max.apply(null, data.map(function(d) { return d.value; }));
+    if (maxVal === 0) maxVal = 1;
+    var barW = Math.max(8, (chartW / data.length) - 6);
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    for (var g = 0; g <= 4; g++) {
+      var yVal = (maxVal / 4) * g;
+      var yPos = pad.top + chartH - (g / 4) * chartH;
+      ctx.beginPath(); ctx.moveTo(pad.left, yPos); ctx.lineTo(w - pad.right, yPos); ctx.stroke();
+      var label = isPercent ? (yVal * 100).toFixed(0) + '%' : yVal.toFixed(1);
+      ctx.fillText(label, pad.left - 6, yPos + 4);
+    }
+    var barGap = chartW / data.length;
+    for (var i = 0; i < data.length; i++) {
+      var d = data[i];
+      var barH = (d.value / maxVal) * chartH;
+      var x = pad.left + i * barGap + (barGap - barW) / 2;
+      var y = pad.top + chartH - barH;
+      var grad = ctx.createLinearGradient(x, y, x, y + barH);
+      grad.addColorStop(0, '#2dd4bf');
+      grad.addColorStop(1, 'rgba(45, 212, 191, 0.4)');
+      ctx.fillStyle = grad;
+      roundRect(ctx, x, y, barW, barH, 3);
+      ctx.fill();
+      ctx.fillStyle = '#2dd4bf';
+      ctx.font = 'bold 11px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      var valText = isPercent ? (d.value * 100).toFixed(0) + '%' : d.value.toFixed(2);
+      ctx.fillText(valText, x + barW / 2, y - 5);
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '10px system-ui, sans-serif';
+      ctx.save();
+      ctx.translate(x + barW / 2, pad.top + chartH + 8);
+      ctx.rotate(Math.PI / 4);
+      var name = d.product.length > 15 ? d.product.substring(0, 13) + '\u2026' : d.product;
+      ctx.textAlign = 'left';
+      ctx.fillText(name, 0, 0);
+      ctx.restore();
+    }
+  }
+
+  function drawBarChart(canvas, results, field, title) {
+    var data = results.map(function(r) { return { product: r.product, value: r[field] }; });
+    drawBarChartRaw(canvas, data, title, false);
+  }
+
+  function drawBubbleChart(canvas, results) {
+    var s = setupCanvas(canvas);
+    if (!s || results.length === 0) return;
+    var ctx = s.ctx, w = s.w, h = s.h;
+    var pad = { top: 36, right: 30, bottom: 50, left: 60 };
+    var chartW = w - pad.left - pad.right;
+    var chartH = h - pad.top - pad.bottom;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 14px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Attached Rate vs Affinity', w / 2, 22);
+
+    var maxAR = Math.max.apply(null, results.map(function(r) { return r.attachedRate; }));
+    var maxAff = Math.max.apply(null, results.map(function(r) { return r.affinity; }));
+    var maxSup = Math.max.apply(null, results.map(function(r) { return r.support; }));
+    if (maxAR === 0) maxAR = 1;
+    if (maxAff === 0) maxAff = 2;
+    if (maxSup === 0) maxSup = 0.1;
+    maxAR = Math.min(1, maxAR * 1.1);
+    maxAff = maxAff * 1.15;
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    for (var xi = 0; xi <= 4; xi++) {
+      var xVal = (maxAR / 4) * xi;
+      var xPos = pad.left + (xi / 4) * chartW;
+      ctx.beginPath(); ctx.moveTo(xPos, pad.top); ctx.lineTo(xPos, pad.top + chartH); ctx.stroke();
+      ctx.fillText((xVal * 100).toFixed(0) + '%', xPos, pad.top + chartH + 16);
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.fillText('Attached Rate', pad.left + chartW / 2, h - 8);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '10px system-ui, sans-serif';
+    for (var yi = 0; yi <= 4; yi++) {
+      var yVal = (maxAff / 4) * yi;
+      var yPos = pad.top + chartH - (yi / 4) * chartH;
+      ctx.beginPath(); ctx.moveTo(pad.left, yPos); ctx.lineTo(pad.left + chartW, yPos); ctx.stroke();
+      ctx.fillText(yVal.toFixed(1) + '\u00d7', pad.left - 6, yPos + 4);
+    }
+
+    ctx.save();
+    ctx.translate(14, pad.top + chartH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Affinity (Lift)', 0, 0);
+    ctx.restore();
+
+    var liftOneY = pad.top + chartH - (1 / maxAff) * chartH;
+    if (liftOneY > pad.top && liftOneY < pad.top + chartH) {
+      ctx.strokeStyle = 'rgba(248, 113, 113, 0.4)';
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(pad.left, liftOneY); ctx.lineTo(pad.left + chartW, liftOneY); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(248, 113, 113, 0.6)';
+      ctx.textAlign = 'left';
+      ctx.font = '10px system-ui, sans-serif';
+      ctx.fillText('Lift = 1.0', pad.left + 4, liftOneY - 4);
+    }
+
+    var maxR = 22, minR = 5;
+    for (var ri = 0; ri < results.length; ri++) {
+      var r = results[ri];
+      var cx = pad.left + (r.attachedRate / maxAR) * chartW;
+      var cy = pad.top + chartH - (r.affinity / maxAff) * chartH;
+      var radius = minR + (r.support / maxSup) * (maxR - minR);
+      radius = Math.min(maxR, Math.max(minR, radius));
+      cx = Math.max(pad.left + radius, Math.min(pad.left + chartW - radius, cx));
+      cy = Math.max(pad.top + radius, Math.min(pad.top + chartH - radius, cy));
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fillStyle = r.affinity >= 1 ? 'rgba(45, 212, 191, 0.35)' : 'rgba(248, 113, 113, 0.3)';
+      ctx.fill();
+      ctx.strokeStyle = r.affinity >= 1 ? 'rgba(45, 212, 191, 0.8)' : 'rgba(248, 113, 113, 0.7)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      if (radius > 8) {
+        ctx.fillStyle = '#fff';
+        ctx.font = '9px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        var name = r.product.length > 12 ? r.product.substring(0, 10) + '\u2026' : r.product;
+        ctx.fillText(name, cx, cy - radius - 4);
+      }
+    }
+  }
+
+  /* ── Display results ── */
+  function displayResults(results, antecedent, totalBaskets) {
+    var section = root.querySelector('#mba-resultsSection');
+    if (!section) return;
+    section.style.display = 'block';
+    var summaryEl = root.querySelector('#mba-summaryStats');
+    if (summaryEl) {
+      summaryEl.innerHTML =
+        '<div class="stat-item"><div class="stat-value">' + totalBaskets + '</div><div class="stat-label">Total Baskets</div></div>' +
+        '<div class="stat-item"><div class="stat-value">' + esc(antecedent) + '</div><div class="stat-label">Anchor Product (X)</div></div>' +
+        '<div class="stat-item"><div class="stat-value">' + results.length + '</div><div class="stat-label">Associated Products</div></div>';
+    }
+    var tableWrap = root.querySelector('#mba-resultsTableWrap');
+    if (tableWrap) {
+      if (results.length === 0) {
+        tableWrap.innerHTML = '<p style="color:#fbbf24;">No product pairs found above the minimum support threshold.</p>';
+      } else {
+        var html = '<table class="results-table"><thead><tr><th>Product (Y)</th><th>Support</th><th>Attached Rate</th><th>Affinity</th><th>Cherry Pick</th><th>Co-Occur</th></tr></thead><tbody>';
+        for (var i = 0; i < results.length; i++) {
+          var r = results[i];
+          html += '<tr><td>' + esc(r.product) + '</td>' +
+            '<td>' + (r.support * 100).toFixed(1) + '%</td>' +
+            '<td>' + (r.attachedRate * 100).toFixed(1) + '%</td>' +
+            '<td>' + r.affinity.toFixed(2) + '\u00d7</td>' +
+            '<td>' + (r.cherryPick * 100).toFixed(1) + '%</td>' +
+            '<td>' + r.coOccurrences + '</td></tr>';
+        }
+        html += '</tbody></table>';
+        tableWrap.innerHTML = html;
+      }
+    }
+    drawBarChart(root.querySelector('#mba-barCanvas'), results.slice(0, 10), 'affinity', 'Affinity (Lift)');
+    drawBubbleChart(root.querySelector('#mba-bubbleCanvas'), results);
+  }
+
+  /* ── Tool buttons ── */
+  var runBtn = root.querySelector('#mba-runBtn');
+  if (runBtn) {
+    runBtn.addEventListener('click', function() {
+      var antecedent = (root.querySelector('#mba-antecedent') || {}).value || '';
+      if (!antecedent) { alert('Please enter an antecedent product (X).'); return; }
+      if (_products.indexOf(antecedent) === -1) { alert('Product "' + antecedent + '" not found in data.'); return; }
+      var startStr = (root.querySelector('#mba-dateStart') || {}).value || '';
+      var endStr = (root.querySelector('#mba-dateEnd') || {}).value || '';
+      var minSup = parseFloat((root.querySelector('#mba-minSupport') || {}).value) || 0.01;
+      var filtered = filterByDate(_rawRows, startStr, endStr);
+      var baskets = buildBaskets(filtered);
+      var results = runAnalysis(baskets, antecedent, minSup);
+      displayResults(results, antecedent, Object.keys(baskets).length);
+    });
+  }
+
+  var clearBtn = root.querySelector('#mba-clearBtn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function() {
+      _rawRows = []; _columns = []; _colMap = {}; _products = [];
+      var fi = root.querySelector('#mba-fileInput');
+      if (fi) fi.value = '';
+      var st = root.querySelector('#mba-fileStatus');
+      if (st) { st.textContent = ''; st.classList.add('hidden'); }
+      var pv = root.querySelector('#mba-dataPreview');
+      if (pv) pv.classList.add('hidden');
+      var rs = root.querySelector('#mba-resultsSection');
+      if (rs) rs.style.display = 'none';
+      var rb = root.querySelector('#mba-runBtn');
+      if (rb) rb.disabled = true;
+      var sb = root.querySelector('#mba-runSecondBtn');
+      if (sb) sb.disabled = true;
+      var sr = root.querySelector('#mba-secondResults');
+      if (sr) sr.style.display = 'none';
+    });
+  }
+
+  /* ── Second Look ── */
+  var secondBtn = root.querySelector('#mba-runSecondBtn');
+  if (secondBtn) {
+    secondBtn.addEventListener('click', function() {
+      if (!_colMap.customer || !_colMap.date) {
+        alert('Second Look requires Customer ID and Date columns in your CSV.');
+        return;
+      }
+      var anchorProduct = (root.querySelector('#mba-anchorProduct') || {}).value || '';
+      if (!anchorProduct || _products.indexOf(anchorProduct) === -1) {
+        alert('Please enter a valid anchor product.');
+        return;
+      }
+      var anchorStart = (root.querySelector('#mba-anchorStart') || {}).value || '';
+      var anchorEnd = (root.querySelector('#mba-anchorEnd') || {}).value || '';
+      var followStart = (root.querySelector('#mba-followStart') || {}).value || '';
+      var followEnd = (root.querySelector('#mba-followEnd') || {}).value || '';
+      if (!anchorStart || !anchorEnd || !followStart || !followEnd) {
+        alert('Please set all four date fields.');
+        return;
+      }
+
+      var anchorRows = filterByDate(_rawRows, anchorStart, anchorEnd);
+      var anchorCustomers = {};
+      var anchorCount = 0;
+      for (var i = 0; i < anchorRows.length; i++) {
+        var r = anchorRows[i];
+        if (r[_colMap.product] === anchorProduct && r[_colMap.customer] && !anchorCustomers[r[_colMap.customer]]) {
+          anchorCustomers[r[_colMap.customer]] = true;
+          anchorCount++;
+        }
+      }
+      if (anchorCount === 0) {
+        alert('No customers found who bought "' + anchorProduct + '" in the anchor period.');
+        return;
+      }
+
+      var followRows = filterByDate(_rawRows, followStart, followEnd);
+      var custBaskets = {};
+      for (var f = 0; f < followRows.length; f++) {
+        var fr = followRows[f];
+        var cId = fr[_colMap.customer];
+        var prod = fr[_colMap.product];
+        if (!cId || !prod || !anchorCustomers[cId]) continue;
+        if (!custBaskets[cId]) custBaskets[cId] = {};
+        custBaskets[cId][prod] = true;
+      }
+
+      var keys = Object.keys(custBaskets);
+      var totalCusts = keys.length;
+      var prodCount = {};
+      for (var k = 0; k < keys.length; k++) {
+        var basket = custBaskets[keys[k]];
+        for (var p in basket) prodCount[p] = (prodCount[p] || 0) + 1;
+      }
+
+      var results = [];
+      for (var pn in prodCount) {
+        if (pn === anchorProduct) continue;
+        results.push({ product: pn, count: prodCount[pn], rate: prodCount[pn] / totalCusts });
+      }
+      results.sort(function(a, b) { return b.rate - a.rate; });
+
+      var section = root.querySelector('#mba-secondResults');
+      if (section) section.style.display = 'block';
+      var sum = root.querySelector('#mba-secondSummary');
+      if (sum) {
+        sum.innerHTML =
+          '<div class="stat-item"><div class="stat-value">' + anchorCount + '</div><div class="stat-label">Customers Bought Anchor</div></div>' +
+          '<div class="stat-item"><div class="stat-value">' + totalCusts + '</div><div class="stat-label">Returned in Follow-Up</div></div>' +
+          '<div class="stat-item"><div class="stat-value">' + results.length + '</div><div class="stat-label">Products Purchased</div></div>';
+      }
+      var tw = root.querySelector('#mba-secondTableWrap');
+      if (tw) {
+        if (results.length === 0) {
+          tw.innerHTML = '<p style="color:#fbbf24;">No follow-up purchases found for these customers.</p>';
+        } else {
+          var html = '<table class="results-table"><thead><tr><th>Product</th><th>Customers</th><th>Rate</th></tr></thead><tbody>';
+          var max = Math.min(50, results.length);
+          for (var n = 0; n < max; n++) {
+            var rr = results[n];
+            html += '<tr><td>' + esc(rr.product) + '</td><td>' + rr.count + '</td><td>' + (rr.rate * 100).toFixed(1) + '%</td></tr>';
+          }
+          html += '</tbody></table>';
+          tw.innerHTML = html;
+        }
+      }
+      var barData = results.slice(0, 10).map(function(r) { return { product: r.product, value: r.rate }; });
+      drawBarChartRaw(root.querySelector('#mba-secondBarCanvas'), barData, 'Follow-Up Rate', true);
+    });
+  }
+});
+</script>
+
+</body>
+</html>

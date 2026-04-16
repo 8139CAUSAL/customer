@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLV &mdash; Churn Analysis</title>
+<link rel="stylesheet" href="../style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<main class="page">
+
+  <nav class="sec-nav" role="navigation" aria-label="Section navigation">
+    <a href="../" class="sec-nav__btn sec-nav__btn--back" aria-label="Home">&larr; BACK</a>
+    <h1 class="sec-nav__header">CLV &mdash; Churn Analysis</h1>
+    <a href="retention/" class="sec-nav__btn sec-nav__btn--next" aria-label="Retention Analytics">NEXT &rarr;</a>
+  </nav>
+
+  <p class="problem-statement">Understand churn dynamics, calculate rates from real numbers, and visualize retention curves.</p>
+
+  <!-- Concept Cards -->
+  <div class="content-card">
+    <h2>Churn Prediction &amp; Prevention</h2>
+    <p>Understand the churn analysis pipeline &mdash; click any step to learn more.</p>
+    <div class="concept-grid">
+
+      <div class="concept-card" data-toggle="concept">
+        <h3>1. Data Collection</h3>
+        <div class="summary">Aggregate activity metrics: login frequency, support tickets, feature usage, session duration.</div>
+        <div class="expand-hint">Learn more <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div>
+        <div class="concept-detail">
+          Churn models need behavioral signals, not just demographics. The most predictive features tend to be <strong>changes in behavior</strong> &mdash; a customer who logged in daily and now logs in weekly is a stronger signal than a customer who always logged in weekly. Collect: login timestamps, feature usage events, support tickets (volume and sentiment), billing events, NPS/CSAT responses, and session duration trends. Store as time-series so you can compute rolling averages and deltas.
+        </div>
+      </div>
+
+      <div class="concept-card" data-toggle="concept">
+        <h3>2. Risk Scoring</h3>
+        <div class="summary">Calculate churn probability using gradient boosting on behavioral signals.</div>
+        <div class="expand-hint">Learn more <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div>
+        <div class="concept-detail">
+          Gradient boosting models (XGBoost, LightGBM) are the industry standard for churn scoring. They handle mixed feature types, missing data, and non-linear relationships well. The model outputs a probability (0&ndash;1) for each customer. Key signals typically include: <strong>declining activity velocity</strong>, increasing support ticket frequency, reduced feature breadth, and payment failures. Train on historical churn labels with a rolling window approach to avoid data leakage.
+        </div>
+      </div>
+
+      <div class="concept-card" data-toggle="concept">
+        <h3>3. Segmentation</h3>
+        <div class="summary">Group customers into risk tiers (Low, Medium, High) based on probability thresholds.</div>
+        <div class="expand-hint">Learn more <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div>
+        <div class="concept-detail">
+          Don&rsquo;t just use arbitrary thresholds (e.g., &gt; 0.7 = high risk). Instead, calibrate thresholds based on your <strong>intervention capacity</strong>. If your team can handle 50 save-calls per week, set thresholds so the &ldquo;high risk&rdquo; segment is roughly that size. Use precision-recall curves to find the threshold that maximizes caught churners while keeping false positives manageable. Revisit thresholds monthly as your model and customer base evolve.
+        </div>
+      </div>
+
+      <div class="concept-card" data-toggle="concept">
+        <h3>4. Intervention</h3>
+        <div class="summary">Deploy targeted retention tactics per tier and trigger automated workflows.</div>
+        <div class="expand-hint">Learn more <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div>
+        <div class="concept-detail">
+          Match intervention cost to risk tier. <strong>High risk:</strong> personal outreach (CSM call, executive sponsor), discounts or contract flexibility, urgent product feedback loop. <strong>Medium risk:</strong> automated nurture sequences, targeted feature education, proactive check-ins. <strong>Low risk:</strong> community engagement, success story sharing, upsell opportunities. Track intervention success rates by tier to continuously improve your playbook. Measure <em>incremental</em> retention &mdash; compare intervened customers vs. a holdout group.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Tool: Churn Rate Calculator -->
+  <div class="tool-section">
+    <h2>Churn Rate Calculator</h2>
+    <p class="tool-desc">Input your real numbers and get gross/net churn rates with the full formula shown.</p>
+
+    <div class="input-row">
+      <div class="field">
+        <label>Customers at Start of Period</label>
+        <input type="number" id="churn-start" value="500" min="0">
+      </div>
+      <div class="field">
+        <label>Customers Lost During Period</label>
+        <input type="number" id="churn-lost" value="35" min="0">
+      </div>
+      <div class="field">
+        <label>New Customers Gained During Period</label>
+        <input type="number" id="churn-gained" value="20" min="0">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="calc-btn" id="btn-calc-churn">Calculate Churn Rate</button>
+    </div>
+
+    <div class="results-panel" id="churn-rate-results">
+      <h3>Results</h3>
+      <div class="formula-display" id="churn-formula"></div>
+      <div id="churn-metrics"></div>
+    </div>
+  </div>
+
+  <!-- Tool: Cohort Churn Visualizer -->
+  <div class="tool-section">
+    <h2>Cohort Churn Visualizer</h2>
+    <p class="tool-desc">Paste monthly active user counts to see your actual retention curve plotted over time.</p>
+
+    <div class="field">
+      <label>Monthly Active User Counts (comma-separated)</label>
+      <textarea id="cohort-input" placeholder="e.g. 1000, 870, 743, 650, 590, 541, 503, 478, 455, 440, 430, 422">1000, 870, 743, 650, 590, 541, 503, 478, 455, 440, 430, 422</textarea>
+      <small>Enter the number of active users at Month 0, Month 1, Month 2, etc. Month 0 is your starting cohort.</small>
+    </div>
+
+    <div class="btn-row">
+      <button class="calc-btn" id="btn-plot-cohort">Plot Retention Curve</button>
+    </div>
+
+    <div class="status-msg" id="cohort-error"></div>
+
+    <div class="results-panel" id="cohort-results">
+      <h3>Retention Curve</h3>
+      <div id="cohort-metrics"></div>
+      <div class="chart-container">
+        <canvas id="cohortChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var chartInstances = {};
+
+  function fmt(n, decimals) {
+    if (typeof decimals === 'undefined') decimals = 2;
+    return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  }
+  function fmtPct(n, decimals) {
+    if (typeof decimals === 'undefined') decimals = 1;
+    return n.toFixed(decimals) + '%';
+  }
+  function showResults(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('visible');
+  }
+  function clearStatus(id) {
+    var el = document.getElementById(id);
+    if (el) { el.className = 'status-msg'; el.textContent = ''; }
+  }
+  function setStatus(id, msg, type) {
+    var el = document.getElementById(id);
+    if (el) { el.className = 'status-msg ' + type; el.textContent = msg; }
+  }
+  function metricsHTML(pairs) {
+    return pairs.map(function(pair) {
+      return '<div class="result-metric"><span class="label">' + pair[0] + '</span><span class="value">' + pair[1] + '</span></div>';
+    }).join('');
+  }
+  function getOrCreateChart(canvasId, config) {
+    if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return null;
+    chartInstances[canvasId] = new Chart(canvas.getContext('2d'), config);
+    return chartInstances[canvasId];
+  }
+
+  /* Concept card toggle */
+  var conceptCards = document.querySelectorAll('.concept-card[data-toggle="concept"]');
+  for (var i = 0; i < conceptCards.length; i++) {
+    conceptCards[i].addEventListener('click', function() {
+      this.classList.toggle('expanded');
+    });
+  }
+
+  /* Churn Rate Calculator */
+  document.getElementById('btn-calc-churn').addEventListener('click', function() {
+    var start = parseFloat(document.getElementById('churn-start').value) || 0;
+    var lost = parseFloat(document.getElementById('churn-lost').value) || 0;
+    var gained = parseFloat(document.getElementById('churn-gained').value) || 0;
+    if (start <= 0) return;
+
+    var grossChurnRate = (lost / start) * 100;
+    var netChurnRate = ((lost - gained) / start) * 100;
+    var endCustomers = start - lost + gained;
+    var logoRetention = ((start - lost) / start) * 100;
+    var avgLifespan = grossChurnRate > 0 ? (1 / (grossChurnRate / 100)) : Infinity;
+    var avgLifespanStr = avgLifespan === Infinity ? '\u221E' : fmt(avgLifespan, 1) + ' periods';
+
+    document.getElementById('churn-formula').innerHTML =
+      'Gross Churn Rate <span class="op">=</span> <span class="hl">' + lost + '</span> <span class="op">\u00F7</span> <span class="hl">' + start + '</span> <span class="op">=</span> <span class="res">' + fmtPct(grossChurnRate) + '</span>\n' +
+      'Net Churn Rate   <span class="op">=</span> (<span class="hl">' + lost + '</span> <span class="op">\u2212</span> <span class="hl">' + gained + '</span>) <span class="op">\u00F7</span> <span class="hl">' + start + '</span> <span class="op">=</span> <span class="res">' + fmtPct(netChurnRate) + '</span>';
+
+    document.getElementById('churn-metrics').innerHTML = metricsHTML([
+      ['Gross Churn Rate', fmtPct(grossChurnRate)],
+      ['Net Churn Rate', fmtPct(netChurnRate)],
+      ['Logo Retention Rate', fmtPct(logoRetention)],
+      ['Customers at End of Period', fmt(endCustomers, 0)],
+      ['Implied Avg Customer Lifespan', avgLifespanStr]
+    ]);
+
+    showResults('churn-rate-results');
+  });
+
+  /* Cohort Churn Visualizer */
+  document.getElementById('btn-plot-cohort').addEventListener('click', function() {
+    clearStatus('cohort-error');
+    var raw = document.getElementById('cohort-input').value.trim();
+    var nums = raw.split(/[\s,]+/).map(Number).filter(function(n) { return !isNaN(n) && n >= 0; });
+
+    if (nums.length < 2) {
+      setStatus('cohort-error', 'Please enter at least 2 monthly counts.', 'error');
+      return;
+    }
+
+    var base = nums[0];
+    if (base <= 0) {
+      setStatus('cohort-error', 'Month 0 count must be greater than 0.', 'error');
+      return;
+    }
+
+    var retentionPcts = nums.map(function(n) { return (n / base) * 100; });
+    var labels = nums.map(function(_, idx) { return 'M' + idx; });
+
+    var momRetention = [];
+    for (var j = 1; j < nums.length; j++) {
+      momRetention.push(nums[j - 1] > 0 ? (nums[j] / nums[j - 1]) * 100 : 0);
+    }
+    var avgMoM = momRetention.reduce(function(a, b) { return a + b; }, 0) / momRetention.length;
+    var overallRetention = retentionPcts[retentionPcts.length - 1];
+    var medianMonthlyChurn = 100 - avgMoM;
+    var impliedLifespan = medianMonthlyChurn > 0 ? 1 / (medianMonthlyChurn / 100) : Infinity;
+
+    document.getElementById('cohort-metrics').innerHTML = metricsHTML([
+      ['Starting Cohort', fmt(base, 0)],
+      ['Final Retention (' + (nums.length - 1) + ' months)', fmtPct(overallRetention)],
+      ['Avg Month-over-Month Retention', fmtPct(avgMoM)],
+      ['Avg Monthly Churn', fmtPct(medianMonthlyChurn)],
+      ['Implied Avg Lifespan', impliedLifespan === Infinity ? '\u221E' : fmt(impliedLifespan, 1) + ' months']
+    ]);
+
+    getOrCreateChart('cohortChart', {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Retention %',
+          data: retentionPcts,
+          borderColor: '#2dd4bf',
+          backgroundColor: 'rgba(45, 212, 191, 0.08)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointBackgroundColor: '#2dd4bf',
+          borderWidth: 2.5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function(ctx) { return ctx.parsed.y.toFixed(1) + '%'; } } }
+        },
+        scales: {
+          y: { min: 0, max: 105, ticks: { callback: function(v) { return v + '%'; }, color: 'rgba(255,255,255,0.5)' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+          x: { ticks: { color: 'rgba(255,255,255,0.5)' }, grid: { display: false } }
+        }
+      }
+    });
+
+    showResults('cohort-results');
+  });
+});
+</script>
+
+</body>
+</html>

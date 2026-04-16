@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loyalty &mdash; Predictive Models</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+
+<main class="page">
+
+  <nav class="sec-nav" role="navigation" aria-label="Section navigation">
+    <a href="../sem/" class="sec-nav__btn sec-nav__btn--back" aria-label="SEM Analysis">&larr; BACK</a>
+    <h1 class="sec-nav__header">Loyalty &mdash; Predictive Models</h1>
+    <a href="../segmentation/" class="sec-nav__btn sec-nav__btn--next" aria-label="Segmentation">NEXT &rarr;</a>
+  </nav>
+
+  <p class="problem-statement">Beyond correcting for bias &mdash; predictive models and multi-touch attribution reveal what actually drives incremental value.</p>
+
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-icon">&#128200;</div>
+      <h3>Predictive CLV Models</h3>
+      <p>Expand beyond RFM (Recency, Frequency, Monetary) by incorporating third-party demographic data and early behavior patterns to predict tier progression and churn.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#128279;</div>
+      <h3>Multi-Touch Attribution</h3>
+      <p>Track the specific impact of various loyalty journey touchpoints &mdash; sign-up offers, birthday rewards, points accelerators &mdash; to understand what drives additional spend.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#128176;</div>
+      <h3>Discount Elasticity Segmentation</h3>
+      <p>Identify &ldquo;value seekers&rdquo; who require incentives versus &ldquo;experience seekers&rdquo; who respond better to product-focused messaging &mdash; preventing waste on unnecessary discounts.</p>
+    </div>
+  </div>
+
+  <div class="accordion">
+
+    <div class="accordion-item">
+      <div class="accordion-header">
+        <h4><span class="num">1</span> At-Risk Trigger Detection</h4>
+        <span class="accordion-icon"></span>
+      </div>
+      <div class="accordion-content">
+        <div class="accordion-body">
+          <p>Customer Data Platforms (CDPs) can identify <span class="highlight">&ldquo;At-Risk&rdquo; triggers</span> &mdash; such as when a bi-weekly visitor misses their regular pattern &mdash; enabling personalized interventions before the customer lapses.</p>
+          <ul>
+            <li>Real-time monitoring of behavioral deviations from established patterns</li>
+            <li>Automated trigger-based campaigns when thresholds are crossed</li>
+            <li>Personalized reminders timed to individual rhythms</li>
+            <li>Proactive retention vs. reactive win-back</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <div class="accordion-header">
+        <h4><span class="num">2</span> Retention Worthiness Analysis</h4>
+        <span class="accordion-icon"></span>
+      </div>
+      <div class="accordion-content">
+        <div class="accordion-body">
+          <p>Determines whether the <span class="highlight">predicted profit from a retained customer</span> justifies the cost incurred to keep them.</p>
+          <ul>
+            <li>Not all customers are worth saving &mdash; some have negative CLV</li>
+            <li>Combines predicted future value with retention cost estimates</li>
+            <li>Prevents &ldquo;waste&rdquo; by stopping unnecessary discounts for top 20% who would visit anyway</li>
+            <li>Allocates retention budget to highest-ROI interventions</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="quiz-container">
+    <h4 class="quiz-question">Why might discounting be ineffective for your most loyal customers?</h4>
+    <div class="quiz-options" id="quiz2-options">
+      <div class="quiz-option" data-correct="false">
+        <span class="letter">A</span>
+        <span>They already know all your products</span>
+      </div>
+      <div class="quiz-option" data-correct="false">
+        <span class="letter">B</span>
+        <span>They don&rsquo;t open promotional emails</span>
+      </div>
+      <div class="quiz-option" data-correct="true">
+        <span class="letter">C</span>
+        <span>They would visit and spend regardless of incentives</span>
+      </div>
+      <div class="quiz-option" data-correct="false">
+        <span class="letter">D</span>
+        <span>Discounts are too complicated to redeem</span>
+      </div>
+    </div>
+    <div class="quiz-feedback" id="quiz2-feedback"></div>
+    <button class="quiz-btn" id="quiz2-btn" type="button">Check Answer</button>
+  </div>
+
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  /* Accordion */
+  var headers = document.querySelectorAll('.accordion-header');
+  for (var i = 0; i < headers.length; i++) {
+    headers[i].addEventListener('click', function() {
+      this.parentElement.classList.toggle('open');
+    });
+  }
+
+  /* Quiz */
+  var options = document.querySelectorAll('#quiz2-options .quiz-option');
+  var selected = null;
+  for (var j = 0; j < options.length; j++) {
+    options[j].addEventListener('click', function() {
+      if (this.classList.contains('correct') || this.classList.contains('incorrect')) return;
+      for (var k = 0; k < options.length; k++) options[k].classList.remove('selected');
+      this.classList.add('selected');
+      selected = this;
+    });
+  }
+  document.getElementById('quiz2-btn').addEventListener('click', function() {
+    var feedback = document.getElementById('quiz2-feedback');
+    if (!selected) {
+      feedback.className = 'quiz-feedback error';
+      feedback.textContent = 'Please select an answer first.';
+      return;
+    }
+    var isCorrect = selected.getAttribute('data-correct') === 'true';
+    selected.classList.remove('selected');
+    selected.classList.add(isCorrect ? 'correct' : 'incorrect');
+    feedback.className = 'quiz-feedback ' + (isCorrect ? 'success' : 'error');
+    feedback.textContent = isCorrect
+      ? 'Correct! Your most loyal customers would have purchased anyway \u2014 discounting them erodes margin without producing incremental sales.'
+      : 'Not quite. The key reason is that loyalists already buy without incentive, so any discount reduces margin on sales you would have captured regardless.';
+  });
+});
+</script>
+
+</body>
+</html>
