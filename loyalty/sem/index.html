@@ -5,6 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Loyalty &mdash; SEM Analysis</title>
 <link rel="stylesheet" href="../../style.css">
+<style>
+  /* SEM workbench page-specific styles */
+  .sem-tabs { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .sem-tab-btn {
+    padding: 0.6rem 1.1rem; border: 1px solid var(--border); border-radius: 9999px;
+    background: transparent; color: var(--text-muted); font-weight: 600; font-size: 14px;
+    cursor: pointer; transition: all 0.2s; font-family: inherit;
+  }
+  .sem-tab-btn:hover { border-color: var(--text); color: var(--text); }
+  .sem-tab-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+  .sem-params { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 12px 0 16px; }
+  .sem-param-item { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 14px 16px; }
+  .sem-param-item label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+  .sem-param-item input[type="range"] { width: 100%; accent-color: var(--accent); }
+  .sem-param-item .param-val { display: block; margin-top: 6px; font-size: 15px; font-weight: 700; color: var(--accent); font-family: "SF Mono","Fira Code",Consolas,monospace; }
+
+  .sem-diagram-wrap { background: rgba(255,255,255,0.02); border: 1px solid var(--border-soft); border-radius: 10px; padding: 10px; margin: 14px 0; overflow-x: auto; }
+  .sem-diagram-wrap svg { display: block; width: 100%; height: auto; min-width: 560px; }
+
+  .sem-gof-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 12px 0; }
+  .sem-gof-item { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 12px 14px; text-align: center; }
+  .sem-gof-item strong { display: block; font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
+  .sem-gof-item .gof-val { font-size: 20px; font-weight: 700; font-family: "SF Mono","Fira Code",Consolas,monospace; color: var(--text); }
+  .sem-gof-item .gof-rule { display: block; font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .sem-gof-item.good .gof-val { color: #4ade80; }
+  .sem-gof-item.bad .gof-val { color: #f87171; }
+
+  .sem-table-wrap { overflow-x: auto; margin: 12px 0; }
+  .sem-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 460px; }
+  .sem-table th { padding: 8px 10px; text-align: left; font-size: 12px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+  .sem-table td { padding: 7px 10px; border-bottom: 1px solid var(--border-soft); color: var(--text); font-family: "SF Mono","Fira Code",Consolas,monospace; }
+  .sem-table td:first-child { font-family: inherit; }
+  .sem-table td.accent-cell { color: var(--accent); font-weight: 600; }
+</style>
 </head>
 <body>
 
@@ -79,6 +114,60 @@
     </div>
   </div>
 
+  <!-- SEM Workbench -->
+  <div class="tool-section">
+    <h2>SEM Workbench</h2>
+    <p class="tool-desc">Fit a real structural equation model in your browser. Pick a model, set the population you want to simulate, and the workbench draws a survey sample, estimates all parameters by maximum likelihood, draws the path diagram with standardized estimates, and reports the goodness-of-fit statistics you would get from Stata&rsquo;s <code style="background:rgba(45,212,191,0.12);color:var(--accent);padding:0.1em 0.35em;border-radius:3px;">estat gof, stats(all)</code>.</p>
+
+    <div class="sem-tabs">
+      <button class="sem-tab-btn active" id="sem-tab-cfa" type="button">Model 1: Two-Factor Loyalty CFA</button>
+      <button class="sem-tab-btn" id="sem-tab-med" type="button">Model 2: Satisfaction &rarr; Loyalty &rarr; Repurchase</button>
+    </div>
+
+    <p id="sem-model-desc" style="font-size:13px;color:var(--text-muted);line-height:1.6;margin:0 0 4px;"></p>
+
+    <div class="sem-params">
+      <div class="sem-param-item">
+        <label for="sem-pop-param" id="sem-pop-label">True factor correlation &phi; (population)</label>
+        <input type="range" min="0" max="0.9" step="0.05" value="0.35" id="sem-pop-param">
+        <span class="param-val" id="sem-pop-val">0.35</span>
+      </div>
+      <div class="sem-param-item">
+        <label for="sem-n">Sample size (survey respondents)</label>
+        <input type="range" min="100" max="2000" step="50" value="400" id="sem-n">
+        <span class="param-val" id="sem-n-val">400</span>
+      </div>
+      <div class="sem-param-item" style="display:flex;flex-direction:column;justify-content:center;">
+        <button class="calc-btn" id="sem-resample" type="button" style="width:100%;">Draw New Sample &amp; Fit</button>
+        <small style="font-size:11px;color:var(--text-dim);margin-top:8px;text-align:center;">Slider changes re-fit automatically on the current seed.</small>
+      </div>
+    </div>
+
+    <div class="status-msg" id="sem-status"></div>
+
+    <h3 style="font-size:15px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.4px;margin:18px 0 4px;">Path Diagram (standardized ML estimates)</h3>
+    <div class="sem-diagram-wrap"><div id="sem-diagram"></div></div>
+
+    <h3 style="font-size:15px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.4px;margin:18px 0 4px;">Goodness of Fit</h3>
+    <div class="sem-gof-grid" id="sem-gof"></div>
+    <p id="sem-gof-note" style="font-size:12.5px;color:var(--text-muted);line-height:1.6;margin:6px 0 0;"></p>
+
+    <div id="sem-compare-block">
+      <h3 style="font-size:15px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.4px;margin:18px 0 4px;">Does Loyalty Really Have Two Dimensions?</h3>
+      <p style="font-size:13px;color:var(--text-muted);line-height:1.6;margin:0 0 8px;">The same data re-fit with a single &ldquo;general loyalty&rdquo; factor. If loyalty were one thing, the one-factor model would fit just as well. It doesn&rsquo;t &mdash; which is the empirical case for treating emotional and transactional loyalty as distinct constructs.</p>
+      <div class="sem-table-wrap">
+        <table class="sem-table" id="sem-compare-table"></table>
+      </div>
+      <p id="sem-compare-note" style="font-size:12.5px;color:var(--text-muted);line-height:1.6;margin:6px 0 0;"></p>
+    </div>
+
+    <h3 style="font-size:15px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.4px;margin:18px 0 4px;">Parameter Estimates</h3>
+    <div class="sem-table-wrap">
+      <table class="sem-table" id="sem-est-table"></table>
+    </div>
+    <p id="sem-effects-note" style="font-size:12.5px;color:var(--text-muted);line-height:1.6;margin:6px 0 0;"></p>
+  </div>
+
   <div class="callout">
     <div class="callout-icon">&#127919;</div>
     <div class="callout-content">
@@ -97,6 +186,526 @@ document.addEventListener('DOMContentLoaded', function() {
       this.parentElement.classList.toggle('open');
     });
   }
+
+  /* ================= SEM engine ================= */
+
+  function mulberry32(seed) {
+    return function() {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function makeNormal(rand) {
+    var spare = null;
+    return function() {
+      if (spare !== null) { var v = spare; spare = null; return v; }
+      var u1 = Math.max(rand(), 1e-12), u2 = rand();
+      var m = Math.sqrt(-2 * Math.log(u1));
+      spare = m * Math.sin(2 * Math.PI * u2);
+      return m * Math.cos(2 * Math.PI * u2);
+    };
+  }
+
+  function matClone(A) { return A.map(function(r) { return r.slice(); }); }
+
+  /* Gauss-Jordan inverse + log|A|; returns null if singular / not PD */
+  function invLogDet(A) {
+    var n = A.length, M = matClone(A), I = [], i, j;
+    for (i = 0; i < n; i++) { I.push(new Array(n).fill(0)); I[i][i] = 1; }
+    var logDet = 0, sign = 1;
+    for (var c = 0; c < n; c++) {
+      var piv = c;
+      for (var r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
+      if (Math.abs(M[piv][c]) < 1e-12) return null;
+      if (piv !== c) {
+        var tmp = M[piv]; M[piv] = M[c]; M[c] = tmp;
+        tmp = I[piv]; I[piv] = I[c]; I[c] = tmp;
+        sign = -sign;
+      }
+      var d = M[c][c];
+      logDet += Math.log(Math.abs(d));
+      if (d < 0) sign = -sign;
+      for (j = 0; j < n; j++) { M[c][j] /= d; I[c][j] /= d; }
+      for (var r2 = 0; r2 < n; r2++) {
+        if (r2 === c) continue;
+        var f = M[r2][c];
+        if (f === 0) continue;
+        for (var j2 = 0; j2 < n; j2++) { M[r2][j2] -= f * M[c][j2]; I[r2][j2] -= f * I[c][j2]; }
+      }
+    }
+    if (sign < 0) return null;
+    return { inv: I, logDet: logDet };
+  }
+
+  /* ML discrepancy: F = ln|Sigma| + tr(S Sigma^-1) - ln|S| - p */
+  function fml(S, Sigma, logDetS) {
+    var res = invLogDet(Sigma);
+    if (!res) return null;
+    var p = S.length, tr = 0;
+    for (var i = 0; i < p; i++)
+      for (var j = 0; j < p; j++) tr += S[i][j] * res.inv[j][i];
+    return res.logDet + tr - logDetS - p;
+  }
+
+  /* Adam with central-difference gradients; models are small so this is fast */
+  function minimize(objective, theta0, iters) {
+    var th = theta0.slice(), n = th.length;
+    var m = new Array(n).fill(0), v = new Array(n).fill(0);
+    var lr = 0.05, b1 = 0.9, b2 = 0.999, eps = 1e-8, h = 1e-5;
+    var best = objective(th);
+    if (best === null) best = 1e10;
+    var bestTh = th.slice();
+    for (var t = 1; t <= iters; t++) {
+      var g = new Array(n), gn = 0, i;
+      for (i = 0; i < n; i++) {
+        var tp = th.slice(); tp[i] += h;
+        var tm = th.slice(); tm[i] -= h;
+        var fp = objective(tp); if (fp === null) fp = 1e10;
+        var fm = objective(tm); if (fm === null) fm = 1e10;
+        g[i] = (fp - fm) / (2 * h);
+      }
+      for (i = 0; i < n; i++) {
+        m[i] = b1 * m[i] + (1 - b1) * g[i];
+        v[i] = b2 * v[i] + (1 - b2) * g[i] * g[i];
+        th[i] -= lr * (m[i] / (1 - Math.pow(b1, t))) / (Math.sqrt(v[i] / (1 - Math.pow(b2, t))) + eps);
+        gn += g[i] * g[i];
+      }
+      var f = objective(th);
+      if (f !== null && f < best) { best = f; bestTh = th.slice(); }
+      if (Math.sqrt(gn) < 1e-7) break;
+      if (t === Math.floor(iters * 0.6)) lr = 0.01;
+    }
+    return { theta: bestTh, f: best };
+  }
+
+  /* Model 1: two-factor CFA, standardized latents.
+     theta = [l1..l6, atanh(phi), log(th1..th6)] */
+  function sigmaCFA2(theta) {
+    var lam = theta.slice(0, 6);
+    var phi = Math.tanh(theta[6]);
+    var th = theta.slice(7, 13).map(Math.exp);
+    var S = [];
+    for (var i = 0; i < 6; i++) {
+      S.push([]);
+      for (var j = 0; j < 6; j++) {
+        var cov = lam[i] * lam[j] * ((i < 3) === (j < 3) ? 1 : phi);
+        if (i === j) cov += th[i];
+        S[i].push(cov);
+      }
+    }
+    return S;
+  }
+
+  /* One-factor alternative. theta = [l1..l6, log(th1..th6)] */
+  function sigmaCFA1(theta) {
+    var lam = theta.slice(0, 6);
+    var th = theta.slice(6, 12).map(Math.exp);
+    var S = [];
+    for (var i = 0; i < 6; i++) {
+      S.push([]);
+      for (var j = 0; j < 6; j++) {
+        var cov = lam[i] * lam[j];
+        if (i === j) cov += th[i];
+        S[i].push(cov);
+      }
+    }
+    return S;
+  }
+
+  /* Model 2: Satisfaction (latent) -> Emotional Loyalty (latent) -> Repurchase (observed),
+     with a direct Satisfaction -> Repurchase path. Var(Sat) fixed to 1.
+     Vars: s1,s2,s3,e1,e2,e3,y
+     theta = [ls1..ls3, le1..le3, b1, b2, b3, log psiE, log psiY, log(th1..th6)] */
+  function sigmaSEM(theta) {
+    var ls = theta.slice(0, 3), le = theta.slice(3, 6);
+    var b1 = theta[6], b2 = theta[7], b3 = theta[8];
+    var psiE = Math.exp(theta[9]), psiY = Math.exp(theta[10]);
+    var th = theta.slice(11, 17).map(Math.exp);
+    var vEmo = b1 * b1 + psiE;
+    var cSy = b2 * b1 + b3;
+    var cEy = b2 * vEmo + b3 * b1;
+    var vY = b2 * b2 * vEmo + b3 * b3 + 2 * b2 * b3 * b1 + psiY;
+    var lamF = [[ls[0], 0], [ls[1], 0], [ls[2], 0], [0, le[0]], [0, le[1]], [0, le[2]]];
+    var covF = [[1, b1], [b1, vEmo]];
+    var covFy = [cSy, cEy];
+    var S = [];
+    for (var i = 0; i < 7; i++) S.push(new Array(7).fill(0));
+    for (var i2 = 0; i2 < 6; i2++) {
+      for (var j2 = 0; j2 < 6; j2++) {
+        var cov = 0;
+        for (var a = 0; a < 2; a++)
+          for (var b = 0; b < 2; b++) cov += lamF[i2][a] * covF[a][b] * lamF[j2][b];
+        if (i2 === j2) cov += th[i2];
+        S[i2][j2] = cov;
+      }
+      var cy = lamF[i2][0] * covFy[0] + lamF[i2][1] * covFy[1];
+      S[i2][6] = cy; S[6][i2] = cy;
+    }
+    S[6][6] = vY;
+    return S;
+  }
+
+  function sampleCov(X) {
+    var n = X.length, p = X[0].length, i, j;
+    var mean = new Array(p).fill(0);
+    X.forEach(function(row) { for (j = 0; j < p; j++) mean[j] += row[j] / n; });
+    var S = [];
+    for (i = 0; i < p; i++) S.push(new Array(p).fill(0));
+    X.forEach(function(row) {
+      for (i = 0; i < p; i++)
+        for (j = 0; j < p; j++) S[i][j] += (row[i] - mean[i]) * (row[j] - mean[j]) / (n - 1);
+    });
+    return S;
+  }
+
+  function fitIndices(S, Sigma, n, q) {
+    var p = S.length;
+    var ldS = invLogDet(S).logDet;
+    var F = fml(S, Sigma, ldS);
+    var df = p * (p + 1) / 2 - q;
+    var chi2 = Math.max(0, (n - 1) * F);
+    var Fb = 0;
+    for (var i = 0; i < p; i++) Fb += Math.log(S[i][i]);
+    Fb -= ldS;
+    var chiB = (n - 1) * Fb, dfB = p * (p - 1) / 2;
+    var cfi = 1 - Math.max(chi2 - df, 0) / Math.max(chiB - dfB, chi2 - df, 1e-10);
+    var tli = Math.min(1, ((chiB / dfB) - (chi2 / df)) / ((chiB / dfB) - 1));
+    var rmsea = Math.sqrt(Math.max(chi2 - df, 0) / (df * (n - 1)));
+    var sum = 0, cnt = 0;
+    for (var i2 = 0; i2 < p; i2++)
+      for (var j2 = 0; j2 <= i2; j2++) {
+        var r = (S[i2][j2] - Sigma[i2][j2]) / Math.sqrt(S[i2][i2] * S[j2][j2]);
+        sum += r * r; cnt++;
+      }
+    return { chi2: chi2, df: df, cfi: cfi, tli: tli, rmsea: rmsea, srmr: Math.sqrt(sum / cnt) };
+  }
+
+  /* Upper-tail chi-square p-value via regularized incomplete gamma */
+  function chi2P(x, k) {
+    if (x <= 0) return 1;
+    var a = k / 2, x2 = x / 2;
+    function lgamma(z) {
+      var c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+      if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lgamma(1 - z);
+      z -= 1;
+      var xx = c[0];
+      for (var i = 1; i < 9; i++) xx += c[i] / (z + i);
+      var t = z + 7.5;
+      return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(xx);
+    }
+    if (x2 < a + 1) {
+      var ap = a, del = 1 / a, sumS = del;
+      for (var i = 0; i < 300; i++) {
+        ap += 1; del *= x2 / ap; sumS += del;
+        if (Math.abs(del) < Math.abs(sumS) * 1e-12) break;
+      }
+      return 1 - sumS * Math.exp(-x2 + a * Math.log(x2) - lgamma(a));
+    }
+    var b = x2 + 1 - a, c2 = 1e300, d = 1 / b, h = d;
+    for (var i2 = 1; i2 < 300; i2++) {
+      var an = -i2 * (i2 - a);
+      b += 2;
+      d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
+      c2 = b + an / c2; if (Math.abs(c2) < 1e-300) c2 = 1e-300;
+      d = 1 / d;
+      var delta = d * c2;
+      h *= delta;
+      if (Math.abs(delta - 1) < 1e-12) break;
+    }
+    return h * Math.exp(-x2 + a * Math.log(x2) - lgamma(a));
+  }
+
+  /* ================= data generation ================= */
+
+  var CFA_LOADINGS = [0.85, 0.8, 0.75, 0.8, 0.7, 0.75];
+  var SEM_LS = [0.85, 0.8, 0.75], SEM_LE = [0.85, 0.75, 0.8], SEM_B2 = 0.55, SEM_B3 = 0.15;
+
+  function genCFAData(n, phi, seed) {
+    var nrm = makeNormal(mulberry32(seed));
+    var X = [];
+    for (var i = 0; i < n; i++) {
+      var f1 = nrm();
+      var f2 = phi * f1 + Math.sqrt(1 - phi * phi) * nrm();
+      var row = [];
+      for (var j = 0; j < 6; j++) {
+        var f = j < 3 ? f1 : f2;
+        var l = CFA_LOADINGS[j];
+        row.push(l * f + Math.sqrt(1 - l * l) * nrm());
+      }
+      X.push(row);
+    }
+    return X;
+  }
+
+  function genSEMData(n, b1, seed) {
+    var nrm = makeNormal(mulberry32(seed));
+    var X = [];
+    var resid = Math.max(0.05, 1 - (SEM_B2 * SEM_B2 + SEM_B3 * SEM_B3 + 2 * SEM_B2 * SEM_B3 * b1));
+    for (var i = 0; i < n; i++) {
+      var sat = nrm();
+      var emo = b1 * sat + Math.sqrt(1 - b1 * b1) * nrm();
+      var y = SEM_B2 * emo + SEM_B3 * sat + Math.sqrt(resid) * nrm();
+      var row = [];
+      for (var j = 0; j < 3; j++) row.push(SEM_LS[j] * sat + Math.sqrt(1 - SEM_LS[j] * SEM_LS[j]) * nrm());
+      for (var k = 0; k < 3; k++) row.push(SEM_LE[k] * emo + Math.sqrt(1 - SEM_LE[k] * SEM_LE[k]) * nrm());
+      row.push(y);
+      X.push(row);
+    }
+    return X;
+  }
+
+  /* ================= SVG diagram ================= */
+
+  var CFA_IND = ['Brand preference', 'Would recommend', 'Resists competitors', 'Visit frequency', 'Points earned', 'Discount redemptions'];
+  var SEM_IND_S = ['Service rating', 'Value rating', 'Overall CSAT'];
+  var SEM_IND_E = ['Brand preference', 'Would recommend', 'Resists competitors'];
+
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+  function svgRect(cx, cy, w, h, color, label) {
+    return '<rect x="' + (cx - w / 2) + '" y="' + (cy - h / 2) + '" width="' + w + '" height="' + h + '" rx="6" fill="rgba(255,255,255,0.04)" stroke="' + color + '" stroke-width="1.5"/>' +
+      '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" fill="rgba(255,255,255,0.85)" font-size="11.5" font-family="sans-serif">' + esc(label) + '</text>';
+  }
+  function svgEllipse(cx, cy, rx, ry, color, label, sub) {
+    return '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry + '" fill="rgba(255,255,255,0.04)" stroke="' + color + '" stroke-width="2"/>' +
+      '<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" fill="' + color + '" font-size="13" font-weight="700" font-family="sans-serif">' + esc(label) + '</text>' +
+      (sub ? '<text x="' + cx + '" y="' + (cy + 14) + '" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="10" font-family="sans-serif">' + esc(sub) + '</text>' : '');
+  }
+  function svgArrow(x1, y1, x2, y2, color, label, labelDx, labelDy) {
+    var mx = (x1 + x2) / 2 + (labelDx || 0), my = (y1 + y2) / 2 + (labelDy || 0);
+    return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + color + '" stroke-width="1.5" marker-end="url(#semArrow)"/>' +
+      (label !== null ? '<text x="' + mx + '" y="' + my + '" text-anchor="middle" fill="' + color + '" font-size="12" font-weight="700" font-family="monospace">' + esc(label) + '</text>' : '');
+  }
+  function svgCurve(x1, y1, cx, cy, x2, y2, color, label, lx, ly, dashed, doubleHead) {
+    return '<path d="M ' + x1 + ' ' + y1 + ' Q ' + cx + ' ' + cy + ' ' + x2 + ' ' + y2 + '" fill="none" stroke="' + color + '" stroke-width="1.5"' + (dashed ? ' stroke-dasharray="5,4"' : '') + ' marker-end="url(#semArrow)"' + (doubleHead ? ' marker-start="url(#semArrowStart)"' : '') + '/>' +
+      '<text x="' + lx + '" y="' + ly + '" text-anchor="middle" fill="' + color + '" font-size="12" font-weight="700" font-family="monospace">' + esc(label) + '</text>';
+  }
+  var SVG_DEFS = '<defs>' +
+    '<marker id="semArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/></marker>' +
+    '<marker id="semArrowStart" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 10 0 L 0 5 L 10 10 z" fill="context-stroke"/></marker>' +
+    '</defs>';
+
+  /* ================= workbench UI ================= */
+
+  var state = { model: 'cfa', pop: 0.35, popSEM: 0.6, n: 400, seed: 8139 };
+
+  var tabCFA = document.getElementById('sem-tab-cfa');
+  var tabMed = document.getElementById('sem-tab-med');
+  var popInput = document.getElementById('sem-pop-param');
+  var popLabel = document.getElementById('sem-pop-label');
+  var popVal = document.getElementById('sem-pop-val');
+  var nInput = document.getElementById('sem-n');
+  var nVal = document.getElementById('sem-n-val');
+  var descEl = document.getElementById('sem-model-desc');
+
+  function setStatus(msg, cls) {
+    var el = document.getElementById('sem-status');
+    el.className = 'status-msg' + (cls ? ' ' + cls : '');
+    el.textContent = msg || '';
+  }
+
+  function gofItem(name, val, rule, good) {
+    return '<div class="sem-gof-item ' + (good ? 'good' : 'bad') + '"><strong>' + name + '</strong><span class="gof-val">' + val + '</span><span class="gof-rule">' + rule + '</span></div>';
+  }
+
+  function renderGOF(fit, n) {
+    var p = chi2P(fit.chi2, fit.df);
+    var html = '';
+    html += gofItem('χ² (df=' + fit.df + ')', fit.chi2.toFixed(2), 'want p ≥ .05', p >= 0.05);
+    html += gofItem('p-value', p < 0.001 ? '<.001' : p.toFixed(3), 'model vs. saturated', p >= 0.05);
+    html += gofItem('CFI', fit.cfi.toFixed(3), '≥ 0.95 good', fit.cfi >= 0.95);
+    html += gofItem('TLI', fit.tli.toFixed(3), '≥ 0.95 good', fit.tli >= 0.95);
+    html += gofItem('RMSEA', fit.rmsea.toFixed(3), '≤ 0.06 good', fit.rmsea <= 0.06);
+    html += gofItem('SRMR', fit.srmr.toFixed(3), '≤ 0.08 good', fit.srmr <= 0.08);
+    document.getElementById('sem-gof').innerHTML = html;
+    document.getElementById('sem-gof-note').textContent =
+      'Estimated by maximum likelihood on the sample covariance matrix (n = ' + n + '). ' +
+      'χ² tests exact fit against the saturated model; CFI/TLI compare against the independence baseline; RMSEA penalizes misfit per degree of freedom; SRMR is the RMS standardized residual correlation.';
+  }
+
+  function runCFA() {
+    var n = state.n, phi = state.pop;
+    var X = genCFAData(n, phi, state.seed);
+    var S = sampleCov(X);
+    var ldS = invLogDet(S).logDet;
+
+    var t0 = [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, Math.atanh(0.3)];
+    for (var i = 0; i < 6; i++) t0.push(Math.log(0.5));
+    var res2 = minimize(function(t) { return fml(S, sigmaCFA2(t), ldS); }, t0, 1200);
+
+    var t01 = [0.7, 0.7, 0.7, 0.7, 0.7, 0.7];
+    for (var i1 = 0; i1 < 6; i1++) t01.push(Math.log(0.5));
+    var res1 = minimize(function(t) { return fml(S, sigmaCFA1(t), ldS); }, t01, 1200);
+
+    var Sig2 = sigmaCFA2(res2.theta), Sig1 = sigmaCFA1(res1.theta);
+    var fit2 = fitIndices(S, Sig2, n, 13);
+    var fit1 = fitIndices(S, Sig1, n, 12);
+
+    var lam = res2.theta.slice(0, 6);
+    var phiHat = Math.tanh(res2.theta[6]);
+    var stdLam = lam.map(function(l, idx) { return l / Math.sqrt(Sig2[idx][idx]); });
+
+    /* diagram */
+    var violet = '#a78bfa', amber = '#fbbf24', grey = 'rgba(255,255,255,0.45)';
+    var indX = [80, 210, 340, 460, 590, 720];
+    var svg = '<svg viewBox="0 0 800 330" xmlns="http://www.w3.org/2000/svg">' + SVG_DEFS;
+    svg += svgCurve(295, 70, 400, 20, 505, 70, grey, 'φ = ' + phiHat.toFixed(2), 400, 32, false, true);
+    svg += svgEllipse(210, 90, 100, 42, violet, 'Emotional Loyalty', 'latent');
+    svg += svgEllipse(590, 90, 110, 42, amber, 'Transactional Loyalty', 'latent');
+    for (var d = 0; d < 6; d++) {
+      var color = d < 3 ? violet : amber;
+      var fx = d < 3 ? 210 : 590, fy = 128;
+      svg += svgArrow(fx + (indX[d] - fx) * 0.25, fy + 8, indX[d], 246, color, stdLam[d].toFixed(2), d < 3 ? -16 : 16, 0);
+      svg += svgRect(indX[d], 268, 122, 42, color, CFA_IND[d]);
+    }
+    svg += '</svg>';
+    document.getElementById('sem-diagram').innerHTML = svg;
+
+    renderGOF(fit2, n);
+
+    /* comparison table */
+    var p2 = chi2P(fit2.chi2, fit2.df), p1 = chi2P(fit1.chi2, fit1.df);
+    var dChi = fit1.chi2 - fit2.chi2;
+    var pd = chi2P(Math.max(dChi, 0), 1);
+    document.getElementById('sem-compare-table').innerHTML =
+      '<tr><th>Model</th><th>χ²</th><th>df</th><th>p</th><th>CFI</th><th>RMSEA</th><th>SRMR</th></tr>' +
+      '<tr><td>Two-factor (emotional + transactional)</td><td class="accent-cell">' + fit2.chi2.toFixed(2) + '</td><td>' + fit2.df + '</td><td>' + (p2 < 0.001 ? '&lt;.001' : p2.toFixed(3)) + '</td><td class="accent-cell">' + fit2.cfi.toFixed(3) + '</td><td>' + fit2.rmsea.toFixed(3) + '</td><td>' + fit2.srmr.toFixed(3) + '</td></tr>' +
+      '<tr><td>One-factor (single “loyalty”)</td><td>' + fit1.chi2.toFixed(2) + '</td><td>' + fit1.df + '</td><td>' + (p1 < 0.001 ? '&lt;.001' : p1.toFixed(3)) + '</td><td>' + fit1.cfi.toFixed(3) + '</td><td>' + fit1.rmsea.toFixed(3) + '</td><td>' + fit1.srmr.toFixed(3) + '</td></tr>';
+    document.getElementById('sem-compare-note').innerHTML =
+      'Likelihood-ratio test (one-factor is the two-factor model with φ fixed at 1): Δχ² = ' + dChi.toFixed(2) + ', Δdf = 1, p ' + (pd < 0.001 ? '&lt; .001' : '= ' + pd.toFixed(3)) + '. ' +
+      (pd < 0.05 ? 'The two-factor structure fits significantly better — emotional and transactional loyalty are empirically distinct here.' : 'With the current population settings the factors are hard to distinguish (try lowering φ or raising n).');
+
+    /* estimates table */
+    var th = res2.theta.slice(7, 13).map(Math.exp);
+    var rows = '<tr><th>Parameter</th><th>Unstd.</th><th>Std.</th><th>R² (1 − uniqueness)</th></tr>';
+    for (var r = 0; r < 6; r++) {
+      var fac = r < 3 ? 'Emotional' : 'Transactional';
+      rows += '<tr><td>' + fac + ' → ' + CFA_IND[r] + '</td><td>' + lam[r].toFixed(3) + '</td><td class="accent-cell">' + stdLam[r].toFixed(3) + '</td><td>' + (stdLam[r] * stdLam[r]).toFixed(3) + '</td></tr>';
+    }
+    rows += '<tr><td>Factor correlation φ</td><td>' + phiHat.toFixed(3) + '</td><td class="accent-cell">' + phiHat.toFixed(3) + '</td><td>—</td></tr>';
+    document.getElementById('sem-est-table').innerHTML = rows;
+    document.getElementById('sem-effects-note').textContent =
+      'True population values used to simulate this sample: loadings [' + CFA_LOADINGS.join(', ') + '], φ = ' + phi.toFixed(2) + '. Estimates should recover these within sampling error — raise n to watch them converge.';
+
+    document.getElementById('sem-compare-block').style.display = '';
+  }
+
+  function runSEM() {
+    var n = state.n, b1 = state.popSEM;
+    var X = genSEMData(n, b1, state.seed);
+    var S = sampleCov(X);
+    var ldS = invLogDet(S).logDet;
+
+    var t0 = [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.3, 0.3, 0.1, Math.log(0.5), Math.log(0.5)];
+    for (var i = 0; i < 6; i++) t0.push(Math.log(0.5));
+    var res = minimize(function(t) { return fml(S, sigmaSEM(t), ldS); }, t0, 1600);
+
+    var Sig = sigmaSEM(res.theta);
+    var fit = fitIndices(S, Sig, n, 17);
+
+    var ls = res.theta.slice(0, 3), le = res.theta.slice(3, 6);
+    var b1h = res.theta[6], b2h = res.theta[7], b3h = res.theta[8];
+    var psiE = Math.exp(res.theta[9]);
+    var vEmo = b1h * b1h + psiE;
+    var sdEmo = Math.sqrt(vEmo), sdY = Math.sqrt(Sig[6][6]);
+    var b1s = b1h / sdEmo;
+    var b2s = b2h * sdEmo / sdY;
+    var b3s = b3h / sdY;
+    var stdLs = ls.map(function(l, idx) { return l / Math.sqrt(Sig[idx][idx]); });
+    var stdLe = le.map(function(l, idx) { return l * sdEmo / Math.sqrt(Sig[idx + 3][idx + 3]); });
+
+    /* diagram */
+    var teal = '#2dd4bf', violet = '#a78bfa', green = '#4ade80';
+    var svg = '<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">' + SVG_DEFS;
+    svg += svgCurve(140, 105, 430, 15, 660, 118, green, 'β₃ = ' + b3s.toFixed(2) + ' (direct)', 430, 40, true, false);
+    svg += svgEllipse(140, 150, 90, 42, teal, 'Satisfaction', 'latent');
+    svg += svgEllipse(430, 150, 100, 42, violet, 'Emotional Loyalty', 'latent');
+    svg += svgRect(690, 150, 130, 46, green, 'Repurchase rate');
+    svg += svgArrow(232, 150, 328, 150, teal, 'β₁ = ' + b1s.toFixed(2), 0, -10);
+    svg += svgArrow(532, 150, 623, 150, violet, 'β₂ = ' + b2s.toFixed(2), 0, -10);
+    var sX = [70, 200, 330], eX = [460, 590, 720];
+    for (var d = 0; d < 3; d++) {
+      svg += svgArrow(140 + (sX[d] - 140) * 0.25, 196, sX[d], 316, teal, stdLs[d].toFixed(2), -16, 0);
+      svg += svgRect(sX[d], 338, 118, 42, teal, SEM_IND_S[d]);
+      svg += svgArrow(430 + (eX[d] - 430) * 0.25, 196, eX[d], 316, violet, stdLe[d].toFixed(2), 16, 0);
+      svg += svgRect(eX[d], 338, 118, 42, violet, SEM_IND_E[d]);
+    }
+    svg += '</svg>';
+    document.getElementById('sem-diagram').innerHTML = svg;
+
+    renderGOF(fit, n);
+    document.getElementById('sem-compare-block').style.display = 'none';
+
+    var rows = '<tr><th>Parameter</th><th>Unstd.</th><th>Std.</th><th></th></tr>';
+    rows += '<tr><td>Satisfaction → Emotional Loyalty (β₁)</td><td>' + b1h.toFixed(3) + '</td><td class="accent-cell">' + b1s.toFixed(3) + '</td><td>structural</td></tr>';
+    rows += '<tr><td>Emotional Loyalty → Repurchase (β₂)</td><td>' + b2h.toFixed(3) + '</td><td class="accent-cell">' + b2s.toFixed(3) + '</td><td>structural</td></tr>';
+    rows += '<tr><td>Satisfaction → Repurchase, direct (β₃)</td><td>' + b3h.toFixed(3) + '</td><td class="accent-cell">' + b3s.toFixed(3) + '</td><td>structural</td></tr>';
+    for (var r = 0; r < 3; r++) rows += '<tr><td>Satisfaction → ' + SEM_IND_S[r] + '</td><td>' + ls[r].toFixed(3) + '</td><td class="accent-cell">' + stdLs[r].toFixed(3) + '</td><td>loading</td></tr>';
+    for (var r2 = 0; r2 < 3; r2++) rows += '<tr><td>Emotional Loyalty → ' + SEM_IND_E[r2] + '</td><td>' + le[r2].toFixed(3) + '</td><td class="accent-cell">' + stdLe[r2].toFixed(3) + '</td><td>loading</td></tr>';
+    document.getElementById('sem-est-table').innerHTML = rows;
+
+    var ind = b1s * b2s, tot = ind + b3s;
+    document.getElementById('sem-effects-note').innerHTML =
+      '<strong style="color:var(--text);">Effect decomposition (standardized):</strong> indirect effect of Satisfaction on Repurchase via Emotional Loyalty = β₁ × β₂ = ' + ind.toFixed(3) +
+      '; direct effect = ' + b3s.toFixed(3) + '; total effect = ' + tot.toFixed(3) + '. ' +
+      (Math.abs(ind) > Math.abs(b3s)
+        ? 'Most of satisfaction’s impact on repurchase flows through emotional loyalty — the classic argument for investing in the relationship, not just the transaction.'
+        : 'Here the direct path dominates — satisfaction converts to repurchase without much mediation.') +
+      ' True simulated values: β₁ = ' + state.popSEM.toFixed(2) + ', β₂ = ' + SEM_B2 + ', β₃ = ' + SEM_B3 + '.';
+  }
+
+  var fitTimer = null;
+  function refit() {
+    if (fitTimer) clearTimeout(fitTimer);
+    setStatus('Fitting model by maximum likelihood…', 'info');
+    fitTimer = setTimeout(function() {
+      try {
+        if (state.model === 'cfa') runCFA(); else runSEM();
+        setStatus('');
+      } catch (e) {
+        setStatus('Estimation failed on this sample — draw a new sample or increase n.', 'error');
+      }
+    }, 30);
+  }
+
+  function applyModelUI() {
+    if (state.model === 'cfa') {
+      tabCFA.classList.add('active'); tabMed.classList.remove('active');
+      descEl.innerHTML = '<strong style="color:var(--text);">Confirmatory factor analysis:</strong> six survey items are modeled as indicators of two correlated latent constructs — emotional and transactional loyalty. The workbench also re-fits a rival one-factor model to test whether the two-dimension story is actually supported by the data.';
+      popLabel.textContent = 'True factor correlation φ (population)';
+      popInput.min = 0; popInput.max = 0.9; popInput.step = 0.05; popInput.value = state.pop;
+      popVal.textContent = (+state.pop).toFixed(2);
+    } else {
+      tabMed.classList.add('active'); tabCFA.classList.remove('active');
+      descEl.innerHTML = '<strong style="color:var(--text);">Full structural model with mediation:</strong> latent Satisfaction drives latent Emotional Loyalty, which drives an observed Repurchase rate; a dashed direct path tests whether satisfaction converts to repurchase without the loyalty route. Each latent is measured by three survey items.';
+      popLabel.textContent = 'True Satisfaction → Loyalty path β₁ (population)';
+      popInput.min = 0.1; popInput.max = 0.9; popInput.step = 0.05; popInput.value = state.popSEM;
+      popVal.textContent = (+state.popSEM).toFixed(2);
+    }
+  }
+
+  tabCFA.addEventListener('click', function() { state.model = 'cfa'; applyModelUI(); refit(); });
+  tabMed.addEventListener('click', function() { state.model = 'sem'; applyModelUI(); refit(); });
+  popInput.addEventListener('input', function(e) {
+    var v = +e.target.value;
+    if (state.model === 'cfa') state.pop = v; else state.popSEM = v;
+    popVal.textContent = v.toFixed(2);
+    refit();
+  });
+  nInput.addEventListener('input', function(e) {
+    state.n = +e.target.value;
+    nVal.textContent = state.n;
+    refit();
+  });
+  document.getElementById('sem-resample').addEventListener('click', function() {
+    state.seed = (state.seed * 1664525 + 1013904223) >>> 0;
+    refit();
+  });
+
+  applyModelUI();
+  refit();
 });
 </script>
 

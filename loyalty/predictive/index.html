@@ -23,11 +23,13 @@
       <div class="card-icon">&#128200;</div>
       <h3>Predictive CLV Models</h3>
       <p>Expand beyond RFM (Recency, Frequency, Monetary) by incorporating third-party demographic data and early behavior patterns to predict tier progression and churn.</p>
+      <a href="https://8139causal.github.io/measurement/response-modeling/" style="display:inline-block;margin-top:12px;font-size:13px;font-weight:600;color:var(--accent);text-decoration:none;">Build one in the Response Modeling toolkit &rarr;</a>
     </div>
     <div class="card">
       <div class="card-icon">&#128279;</div>
       <h3>Multi-Touch Attribution</h3>
       <p>Track the specific impact of various loyalty journey touchpoints &mdash; sign-up offers, birthday rewards, points accelerators &mdash; to understand what drives additional spend.</p>
+      <a href="https://8139causal.github.io/measurement/attribution/" style="display:inline-block;margin-top:12px;font-size:13px;font-weight:600;color:var(--accent);text-decoration:none;">Explore the Attribution explorer &rarr;</a>
     </div>
     <div class="card">
       <div class="card-icon">&#128176;</div>
@@ -76,28 +78,42 @@
 
   </div>
 
-  <div class="quiz-container">
-    <h4 class="quiz-question">Why might discounting be ineffective for your most loyal customers?</h4>
-    <div class="quiz-options" id="quiz2-options">
-      <div class="quiz-option" data-correct="false">
-        <span class="letter">A</span>
-        <span>They already know all your products</span>
+  <div class="tool-section">
+    <h2>Retention Worthiness Calculator</h2>
+    <p class="tool-desc">Is a save offer worth it for a given customer segment? Combine predicted value, churn risk, and how much your intervention actually moves that risk &mdash; the same logic as the Retention Worthiness Analysis above.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+      <div class="field">
+        <label>Predicted annual profit if retained ($)</label>
+        <input type="number" id="rw-profit" value="240" min="0" step="10">
+        <small>Margin, not revenue</small>
       </div>
-      <div class="quiz-option" data-correct="false">
-        <span class="letter">B</span>
-        <span>They don&rsquo;t open promotional emails</span>
+      <div class="field">
+        <label>Churn probability without action (%)</label>
+        <input type="number" id="rw-churn" value="40" min="0" max="100" step="1">
       </div>
-      <div class="quiz-option" data-correct="true">
-        <span class="letter">C</span>
-        <span>They would visit and spend regardless of incentives</span>
+      <div class="field">
+        <label>Churn reduction from offer (pp)</label>
+        <input type="number" id="rw-reduction" value="10" min="0" max="100" step="1">
+        <small>Incremental, e.g. 40% &rarr; 30% = 10</small>
       </div>
-      <div class="quiz-option" data-correct="false">
-        <span class="letter">D</span>
-        <span>Discounts are too complicated to redeem</span>
+      <div class="field">
+        <label>Cost of offer per customer ($)</label>
+        <input type="number" id="rw-cost" value="30" min="0" step="1">
       </div>
     </div>
-    <div class="quiz-feedback" id="quiz2-feedback"></div>
-    <button class="quiz-btn" id="quiz2-btn" type="button">Check Answer</button>
+
+    <div class="btn-row">
+      <button class="calc-btn" id="btn-calc-rw">Evaluate Intervention</button>
+    </div>
+
+    <div class="status-msg" id="rw-status"></div>
+
+    <div class="results-panel" id="rw-results">
+      <h3>Intervention Economics</h3>
+      <div id="rw-metrics"></div>
+      <p id="rw-interp" style="font-size:13px;line-height:1.6;color:rgba(255,255,255,0.6);margin:12px 0 0;"></p>
+    </div>
   </div>
 
 </main>
@@ -112,32 +128,65 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  /* Quiz */
-  var options = document.querySelectorAll('#quiz2-options .quiz-option');
-  var selected = null;
-  for (var j = 0; j < options.length; j++) {
-    options[j].addEventListener('click', function() {
-      if (this.classList.contains('correct') || this.classList.contains('incorrect')) return;
-      for (var k = 0; k < options.length; k++) options[k].classList.remove('selected');
-      this.classList.add('selected');
-      selected = this;
-    });
+  /* Retention Worthiness calculator */
+  function money(n) {
+    var sign = n < 0 ? '\u2212$' : '$';
+    return sign + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-  document.getElementById('quiz2-btn').addEventListener('click', function() {
-    var feedback = document.getElementById('quiz2-feedback');
-    if (!selected) {
-      feedback.className = 'quiz-feedback error';
-      feedback.textContent = 'Please select an answer first.';
+
+  function calcWorthiness() {
+    var status = document.getElementById('rw-status');
+    status.className = 'status-msg';
+    status.textContent = '';
+
+    var profit = parseFloat(document.getElementById('rw-profit').value);
+    var churn = parseFloat(document.getElementById('rw-churn').value);
+    var reduction = parseFloat(document.getElementById('rw-reduction').value);
+    var cost = parseFloat(document.getElementById('rw-cost').value);
+
+    if ([profit, churn, reduction, cost].some(function(v) { return isNaN(v) || v < 0; })) {
+      status.className = 'status-msg error';
+      status.textContent = 'Please fill in all four values.';
       return;
     }
-    var isCorrect = selected.getAttribute('data-correct') === 'true';
-    selected.classList.remove('selected');
-    selected.classList.add(isCorrect ? 'correct' : 'incorrect');
-    feedback.className = 'quiz-feedback ' + (isCorrect ? 'success' : 'error');
-    feedback.textContent = isCorrect
-      ? 'Correct! Your most loyal customers would have purchased anyway \u2014 discounting them erodes margin without producing incremental sales.'
-      : 'Not quite. The key reason is that loyalists already buy without incentive, so any discount reduces margin on sales you would have captured regardless.';
-  });
+    if (reduction > churn) {
+      status.className = 'status-msg error';
+      status.textContent = 'Churn reduction cannot exceed the churn probability itself.';
+      return;
+    }
+
+    var incrementalValue = profit * (reduction / 100);
+    var netValue = incrementalValue - cost;
+    var breakEvenCost = incrementalValue;
+    var roi = cost > 0 ? (netValue / cost) * 100 : Infinity;
+
+    document.getElementById('rw-metrics').innerHTML = [
+      ['Expected value saved by the offer', money(incrementalValue)],
+      ['Net value after offer cost', money(netValue)],
+      ['Break-even offer cost', money(breakEvenCost)],
+      ['ROI on retention spend', roi === Infinity ? '\u221e' : roi.toFixed(0) + '%']
+    ].map(function(pair) {
+      return '<div class="result-metric"><span class="label">' + pair[0] + '</span><span class="value">' + pair[1] + '</span></div>';
+    }).join('');
+
+    var interp;
+    if (netValue > 0) {
+      interp = 'Worth it: the offer changes retention odds enough to protect ' + money(incrementalValue) +
+        ' of expected profit, which exceeds its ' + money(cost) + ' cost. Note the logic: value comes only from the ' +
+        reduction + 'pp of churn the offer prevents \u2014 customers who would stay anyway contribute nothing incremental, which is why blanket discounts to loyalists fail this test.';
+    } else if (netValue < 0) {
+      interp = 'Not worth it as specified: the offer protects only ' + money(incrementalValue) +
+        ' of expected profit but costs ' + money(cost) + '. Either target customers with higher predicted value or churn risk, find a cheaper intervention, or accept the churn. Any offer cheaper than ' +
+        money(breakEvenCost) + ' would flip this to positive.';
+    } else {
+      interp = 'Exactly break-even: the offer cost equals the expected profit it protects. In practice, add a margin of safety before rolling out.';
+    }
+    document.getElementById('rw-interp').textContent = interp;
+    document.getElementById('rw-results').classList.add('visible');
+  }
+
+  document.getElementById('btn-calc-rw').addEventListener('click', calcWorthiness);
+  calcWorthiness();
 });
 </script>
 

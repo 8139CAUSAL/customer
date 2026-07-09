@@ -76,28 +76,40 @@
 
   </div>
 
-  <div class="quiz-container">
-    <h4 class="quiz-question">Why is pre-join matching important?</h4>
-    <div class="quiz-options" id="quiz1-options">
-      <div class="quiz-option" data-correct="false">
-        <span class="letter">A</span>
-        <span>It&rsquo;s easier to collect data before customers join</span>
+  <div class="tool-section">
+    <h2>Difference-in-Differences Lift Calculator</h2>
+    <p class="tool-desc">Enter average spend for your members and their matched control group, before and after the join date. The calculator separates true program lift from the market trend that would have happened anyway.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+      <div class="field">
+        <label>Members &mdash; pre-join spend ($/mo)</label>
+        <input type="number" id="did-member-pre" value="100" min="0" step="1">
       </div>
-      <div class="quiz-option" data-correct="true">
-        <span class="letter">B</span>
-        <span>It ensures groups are comparable before the &ldquo;treatment&rdquo; (joining)</span>
+      <div class="field">
+        <label>Members &mdash; post-join spend ($/mo)</label>
+        <input type="number" id="did-member-post" value="130" min="0" step="1">
       </div>
-      <div class="quiz-option" data-correct="false">
-        <span class="letter">C</span>
-        <span>It allows larger sample sizes</span>
+      <div class="field">
+        <label>Matched control &mdash; pre-period ($/mo)</label>
+        <input type="number" id="did-control-pre" value="98" min="0" step="1">
       </div>
-      <div class="quiz-option" data-correct="false">
-        <span class="letter">D</span>
-        <span>It reduces data processing costs</span>
+      <div class="field">
+        <label>Matched control &mdash; post-period ($/mo)</label>
+        <input type="number" id="did-control-post" value="108" min="0" step="1">
       </div>
     </div>
-    <div class="quiz-feedback" id="quiz1-feedback"></div>
-    <button class="quiz-btn" id="quiz1-btn" type="button">Check Answer</button>
+
+    <div class="btn-row">
+      <button class="calc-btn" id="btn-calc-did">Calculate Lift</button>
+    </div>
+
+    <div class="status-msg" id="did-status"></div>
+
+    <div class="results-panel" id="did-results">
+      <h3>Program Lift Decomposition</h3>
+      <div id="did-metrics"></div>
+      <p id="did-interp" style="font-size:13px;line-height:1.6;color:rgba(255,255,255,0.6);margin:12px 0 0;"></p>
+    </div>
   </div>
 
 </main>
@@ -112,32 +124,60 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  /* Quiz */
-  var options = document.querySelectorAll('#quiz1-options .quiz-option');
-  var selected = null;
-  for (var j = 0; j < options.length; j++) {
-    options[j].addEventListener('click', function() {
-      if (this.classList.contains('correct') || this.classList.contains('incorrect')) return;
-      for (var k = 0; k < options.length; k++) options[k].classList.remove('selected');
-      this.classList.add('selected');
-      selected = this;
-    });
+  /* Difference-in-Differences calculator */
+  function money(n) {
+    var sign = n < 0 ? '−$' : '$';
+    return sign + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-  document.getElementById('quiz1-btn').addEventListener('click', function() {
-    var feedback = document.getElementById('quiz1-feedback');
-    if (!selected) {
-      feedback.className = 'quiz-feedback error';
-      feedback.textContent = 'Please select an answer first.';
+
+  function calcDiD() {
+    var status = document.getElementById('did-status');
+    status.className = 'status-msg';
+    status.textContent = '';
+
+    var mPre = parseFloat(document.getElementById('did-member-pre').value);
+    var mPost = parseFloat(document.getElementById('did-member-post').value);
+    var cPre = parseFloat(document.getElementById('did-control-pre').value);
+    var cPost = parseFloat(document.getElementById('did-control-post').value);
+
+    if ([mPre, mPost, cPre, cPost].some(function(v) { return isNaN(v) || v < 0; })) {
+      status.className = 'status-msg error';
+      status.textContent = 'Please fill in all four spend values.';
       return;
     }
-    var isCorrect = selected.getAttribute('data-correct') === 'true';
-    selected.classList.remove('selected');
-    selected.classList.add(isCorrect ? 'correct' : 'incorrect');
-    feedback.className = 'quiz-feedback ' + (isCorrect ? 'success' : 'error');
-    feedback.textContent = isCorrect
-      ? 'Correct! Pre-join matching ensures the groups are analytically equivalent before membership, so any post-join difference can be attributed to the program.'
-      : 'Not quite. The key reason is that matching before the treatment begins creates groups that are comparable at baseline.';
-  });
+
+    var naive = mPost - mPre;
+    var trend = cPost - cPre;
+    var lift = naive - trend;
+    var liftPct = mPre > 0 ? (lift / mPre) * 100 : 0;
+
+    document.getElementById('did-metrics').innerHTML = [
+      ['Naive member change (post − pre)', money(naive)],
+      ['Market trend (control post − pre)', money(trend)],
+      ['True program lift (DiD)', money(lift) + ' / mo'],
+      ['Lift as % of pre-join baseline', liftPct.toFixed(1) + '%']
+    ].map(function(pair) {
+      return '<div class="result-metric"><span class="label">' + pair[0] + '</span><span class="value">' + pair[1] + '</span></div>';
+    }).join('');
+
+    var interp;
+    if (lift > 0) {
+      interp = 'Of the ' + money(naive) + ' increase you would naively credit to the program, ' + money(trend) +
+        ' would have happened anyway (the matched control group moved by that much). The remaining ' + money(lift) +
+        ' per member per month is the incremental effect attributable to the program.';
+    } else if (lift < 0) {
+      interp = 'The matched control group moved by ' + money(trend) + ' while members moved by ' + money(naive) +
+        '. After removing the market trend, the program shows a negative incremental effect of ' + money(lift) +
+        ' per member per month — worth investigating match quality and the parallel trends assumption before concluding the program hurts.';
+    } else {
+      interp = 'Members and the matched control group moved identically, so this data shows no incremental program effect.';
+    }
+    document.getElementById('did-interp').textContent = interp;
+    document.getElementById('did-results').classList.add('visible');
+  }
+
+  document.getElementById('btn-calc-did').addEventListener('click', calcDiD);
+  calcDiD();
 });
 </script>
 
