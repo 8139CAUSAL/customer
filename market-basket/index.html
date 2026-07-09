@@ -208,7 +208,9 @@
 
       <div class="file-upload-row">
         <input type="file" id="mba-fileInput" accept=".csv">
+        <button class="btn btn-ghost" id="mba-demoBtn" type="button">No data handy? Load Demo Dataset</button>
       </div>
+      <p style="font-size:13px;color:var(--text-dim);margin-top:-6px;">The demo loads six months of synthetic retail transactions (coffee, photography, and stationery baskets with built-in associations), pre-fills the settings, and runs the analysis so you can see exactly what the tool produces.</p>
 
       <div id="mba-fileStatus" class="status-msg hidden"></div>
 
@@ -269,6 +271,10 @@
       <div class="key-definition">
         <p>This is useful for <strong>sequential cross-sell</strong>: if someone buys a camera in January, do they come back for a lens in February? For this analysis your CSV needs a <strong>Customer ID</strong> column and a <strong>Date</strong> column.</p>
       </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="mba-demoBtn2" type="button">No data handy? Load Demo Dataset</button>
+      </div>
+      <p style="font-size:13px;color:var(--text-dim);">The demo data includes camera buyers who return for lenses and tripods a few months later &mdash; it pre-fills the anchor and follow-up periods below and runs the analysis for you.</p>
     </div>
 
     <div class="tool-section">
@@ -374,8 +380,12 @@
         Top-right, large bubbles are your strongest cross-sell opportunities. Bottom-left, small bubbles are noise.</p>
       </div>
 
-      <div class="canvas-wrap bubble">
+      <div class="canvas-wrap bubble" id="mba-bubbleWrap">
         <canvas id="mba-bubbleCanvas"></canvas>
+      </div>
+      <div class="callout" id="mba-bubbleEmpty" style="display:none;">
+        <div class="callout-title">No analysis yet</div>
+        This chart populates from your most recent run. Head to <strong>The Tool</strong> tab and upload a CSV &mdash; or click <strong>&ldquo;Load Demo Dataset&rdquo;</strong> there &mdash; and the bubble chart will render here.
       </div>
 
       <div class="callout warning">
@@ -397,6 +407,8 @@ document.addEventListener('DOMContentLoaded', function() {
   var _columns = [];
   var _colMap = {};
   var _products = [];
+  var _lastResults = null;
+  var _lastSecondBar = null;
 
   /* ── Tabs ── */
   var btns = root.querySelectorAll('.tab-btn');
@@ -409,6 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
       this.classList.add('active');
       var panel = root.querySelector('#mba-panel-' + tab);
       if (panel) panel.classList.add('active');
+      redrawCharts();
     });
   }
 
@@ -818,6 +831,37 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  /* ── Tab-aware chart drawing ──
+     Canvases inside display:none panels have zero size, so anything drawn
+     while a tab is hidden is lost. Charts are therefore (re)drawn from the
+     last results whenever their tab becomes visible or the window resizes. */
+  function redrawCharts() {
+    var toolActive = root.querySelector('#mba-panel-tool').classList.contains('active');
+    var secondActive = root.querySelector('#mba-panel-second').classList.contains('active');
+    var readingActive = root.querySelector('#mba-panel-reading').classList.contains('active');
+
+    if (toolActive && _lastResults && _lastResults.length > 0) {
+      drawBarChart(root.querySelector('#mba-barCanvas'), _lastResults.slice(0, 10), 'affinity', 'Affinity (Lift)');
+    }
+    if (secondActive && _lastSecondBar && _lastSecondBar.length > 0) {
+      drawBarChartRaw(root.querySelector('#mba-secondBarCanvas'), _lastSecondBar, 'Follow-Up Rate', true);
+    }
+    if (readingActive) {
+      var wrap = root.querySelector('#mba-bubbleWrap');
+      var empty = root.querySelector('#mba-bubbleEmpty');
+      var hasData = _lastResults && _lastResults.length > 0;
+      if (wrap) wrap.style.display = hasData ? '' : 'none';
+      if (empty) empty.style.display = hasData ? 'none' : '';
+      if (hasData) drawBubbleChart(root.querySelector('#mba-bubbleCanvas'), _lastResults);
+    }
+  }
+
+  var _resizeTimer = null;
+  window.addEventListener('resize', function() {
+    if (_resizeTimer) clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(redrawCharts, 150);
+  });
+
   /* ── Display results ── */
   function displayResults(results, antecedent, totalBaskets) {
     var section = root.querySelector('#mba-resultsSection');
@@ -849,8 +893,8 @@ document.addEventListener('DOMContentLoaded', function() {
         tableWrap.innerHTML = html;
       }
     }
-    drawBarChart(root.querySelector('#mba-barCanvas'), results.slice(0, 10), 'affinity', 'Affinity (Lift)');
-    drawBubbleChart(root.querySelector('#mba-bubbleCanvas'), results);
+    _lastResults = results;
+    redrawCharts();
   }
 
   /* ── Tool buttons ── */
@@ -978,10 +1022,150 @@ document.addEventListener('DOMContentLoaded', function() {
           tw.innerHTML = html;
         }
       }
-      var barData = results.slice(0, 10).map(function(r) { return { product: r.product, value: r.rate }; });
-      drawBarChartRaw(root.querySelector('#mba-secondBarCanvas'), barData, 'Follow-Up Rate', true);
+      _lastSecondBar = results.slice(0, 10).map(function(r) { return { product: r.product, value: r.rate }; });
+      redrawCharts();
     });
   }
+
+  /* ── Demo dataset ──
+     Deterministic synthetic transactions with built-in associations:
+     coffee baskets (beans + filters + milk), photography baskets, and
+     stationery baskets. Camera buyers in Jan-Mar return for lenses and
+     tripods in Apr-Jun so the Second Look tab has a real pattern to find. */
+  function mulberry32(seed) {
+    return function() {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function generateDemoRows() {
+    var rand = mulberry32(8139);
+    var rows = [];
+    var txCounter = 1;
+
+    function fmtDate(d) {
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function randDate(mStart, mEnd) { /* months 0-based within 2025 */
+      var m = mStart + Math.floor(rand() * (mEnd - mStart + 1));
+      return new Date(2025, m, 1 + Math.floor(rand() * 28));
+    }
+    function addTx(cust, date, products) {
+      if (products.length === 0) return;
+      var tId = 'T' + String(txCounter++).padStart(4, '0');
+      products.forEach(function(p) {
+        rows.push({ transaction_id: tId, customer_id: cust, date: fmtDate(date), product: p });
+      });
+    }
+    function coffeeBasket() {
+      var p = [];
+      p.push('Coffee Beans');
+      if (rand() < 0.55) p.push('Coffee Filters');
+      if (rand() < 0.40) p.push('Milk');
+      if (rand() < 0.25) p.push('Sugar');
+      if (rand() < 0.08) p.push('Coffee Grinder');
+      return p;
+    }
+    function teaBasket() {
+      var p = ['Tea Sampler'];
+      if (rand() < 0.50) p.push('Honey');
+      if (rand() < 0.20) p.push('Milk');
+      return p;
+    }
+    function stationeryBasket() {
+      var p = [];
+      if (rand() < 0.75) p.push('Notebook');
+      if (rand() < 0.65) p.push('Pens');
+      if (rand() < 0.12) p.push('Desk Lamp');
+      if (rand() < 0.15) p.push('Batteries');
+      if (p.length === 0) p.push('Notebook');
+      return p;
+    }
+    function pickTheme(roll) {
+      if (roll < 0.45) return coffeeBasket();
+      if (roll < 0.62) return teaBasket();
+      return stationeryBasket();
+    }
+    function regularBasket() {
+      var p = pickTheme(rand());
+      /* some shoppers mix themes in one trip — creates realistic low-lift
+         pairs so the bubble chart shows its "noise" region too */
+      if (rand() < 0.22) {
+        pickTheme(rand()).forEach(function(item) {
+          if (p.indexOf(item) === -1) p.push(item);
+        });
+      }
+      return p;
+    }
+
+    /* 170 regular customers, 1-5 visits across Jan-Jun 2025 */
+    for (var c = 1; c <= 170; c++) {
+      var cust = 'C' + String(c).padStart(3, '0');
+      var visits = 1 + Math.floor(rand() * 5);
+      for (var v = 0; v < visits; v++) addTx(cust, randDate(0, 5), regularBasket());
+    }
+
+    /* 40 photographers: buy a camera kit in Jan-Mar, accessories in Apr-Jun */
+    for (var pc = 1; pc <= 40; pc++) {
+      var pcust = 'P' + String(pc).padStart(3, '0');
+      var kit = ['Camera'];
+      if (rand() < 0.5) kit.push('SD Card');
+      if (rand() < 0.3) kit.push('Batteries');
+      addTx(pcust, randDate(0, 2), kit);
+      var followUp = [];
+      if (rand() < 0.70) followUp.push('Camera Lens');
+      if (rand() < 0.40) followUp.push('Tripod');
+      if (rand() < 0.35) followUp.push('SD Card');
+      if (followUp.length > 0) addTx(pcust, randDate(3, 5), followUp);
+      if (rand() < 0.4) addTx(pcust, randDate(0, 5), regularBasket());
+    }
+    return rows;
+  }
+
+  function loadDemoData() {
+    _rawRows = generateDemoRows();
+    _columns = ['transaction_id', 'customer_id', 'date', 'product'];
+    _colMap = { transaction: 'transaction_id', product: 'product', date: 'date', customer: 'customer_id' };
+    var pSet = {};
+    _rawRows.forEach(function(r) { pSet[r.product] = true; });
+    _products = Object.keys(pSet).sort();
+
+    populateDatalist('mba-productList', _products);
+    populateDatalist('mba-productList2', _products);
+
+    var status = root.querySelector('#mba-fileStatus');
+    if (status) {
+      status.classList.remove('hidden', 'error');
+      status.classList.add('success');
+      status.textContent = 'Demo dataset loaded: ' + _rawRows.length + ' rows, ' + _products.length +
+        ' products, Jan-Jun 2025. Upload your own CSV at any time to replace it.';
+    }
+    showPreview();
+
+    /* Pre-fill both tools with settings that showcase the built-in patterns */
+    root.querySelector('#mba-dateStart').value = '2025-01-01';
+    root.querySelector('#mba-dateEnd').value = '2025-06-30';
+    root.querySelector('#mba-antecedent').value = 'Coffee Beans';
+    root.querySelector('#mba-minSupport').value = '0.01';
+    root.querySelector('#mba-anchorStart').value = '2025-01-01';
+    root.querySelector('#mba-anchorEnd').value = '2025-03-31';
+    root.querySelector('#mba-anchorProduct').value = 'Camera';
+    root.querySelector('#mba-followStart').value = '2025-04-01';
+    root.querySelector('#mba-followEnd').value = '2025-06-30';
+
+    var rb = root.querySelector('#mba-runBtn');
+    if (rb) { rb.disabled = false; rb.click(); }
+    var sb = root.querySelector('#mba-runSecondBtn');
+    if (sb) { sb.disabled = false; sb.click(); }
+  }
+
+  var demoBtn = root.querySelector('#mba-demoBtn');
+  if (demoBtn) demoBtn.addEventListener('click', loadDemoData);
+  var demoBtn2 = root.querySelector('#mba-demoBtn2');
+  if (demoBtn2) demoBtn2.addEventListener('click', loadDemoData);
 });
 </script>
 
