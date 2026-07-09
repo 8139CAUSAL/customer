@@ -54,7 +54,22 @@
     line-height: 1; display: flex; align-items: center; justify-content: center;
   }
   .semb-chip button:hover { background: rgba(248,113,113,0.25); color: #f87171; }
+  .semb-chip button.flip:hover { background: rgba(45,212,191,0.25); color: var(--accent); }
   .semb-chips .none { font-size: 12.5px; color: var(--text-dim); align-self: center; }
+
+  .semb-pathbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--surface); border: 1px solid var(--border-soft); border-radius: 10px;
+    padding: 10px 14px; margin: 0 0 12px;
+  }
+  .semb-pathbar .pb-label { font-size: 13px; font-weight: 700; color: var(--text-muted); }
+  .semb-pathbar .pb-arrow { color: var(--accent); font-weight: 700; font-size: 16px; }
+  .semb-pathbar select {
+    background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: inherit; font-size: 13px; padding: 7px 10px; min-width: 120px;
+  }
+  .semb-pathbar select:focus { outline: none; border-color: var(--accent); }
+  .semb-pathbar select:disabled, .semb-pathbar button:disabled { opacity: 0.4; }
 
   /* correlation grid */
   .semb-grid { border-collapse: collapse; font-size: 13px; }
@@ -199,7 +214,15 @@
       <button class="semb-canvas-btn" id="semb-add" type="button">+ Add Variable</button>
       <div id="semb-canvas"></div>
     </div>
-    <p class="semb-hint"><strong>Double-click a node</strong> to rename or delete it. <strong>Single-click one node, then another</strong> to draw a directed path; click a path&rsquo;s arrow (or its chip below) to delete it; drawing an existing path in reverse flips it; cycles are rejected. Drag nodes to arrange your diagram. Variables with no incoming path are exogenous and freely correlated (dashed arcs).</p>
+    <p class="semb-hint"><strong>Two ways to draw a directed path:</strong> pick the variables in the From&nbsp;&rarr;&nbsp;To selector below and press &ldquo;Draw path&rdquo;, or single-click one node then another on the canvas. Use a chip&rsquo;s <strong>&#8646;</strong> button to reverse a path&rsquo;s direction, its <strong>&times;</strong> button (or a click on the arrow itself) to delete it. Cycles are rejected. <strong>Double-click a node</strong> to rename or delete it; drag nodes to arrange the diagram. Variables with no incoming path are exogenous and freely correlated (dashed arcs).</p>
+
+    <div class="semb-pathbar">
+      <span class="pb-label">Add a directed path:</span>
+      <select id="semb-path-from" aria-label="Path source variable"></select>
+      <span class="pb-arrow">&rarr;</span>
+      <select id="semb-path-to" aria-label="Path target variable"></select>
+      <button class="calc-btn secondary" id="semb-path-add" type="button" style="padding:8px 18px;">Draw path</button>
+    </div>
 
     <div class="semb-editor" id="semb-editor" style="display:none;"></div>
 
@@ -624,6 +647,7 @@ document.addEventListener('DOMContentLoaded', function() {
     state.edges.forEach(function(e, ei) {
       var f = cf.idxEdges[ei].from, t = cf.idxEdges[ei].to;
       var bstd = u.bs[ei] * Math.sqrt(Sigma[f][f]) / Math.sqrt(Sigma[t][t]);
+      if (Math.abs(bstd) < 0.005) bstd = 0; /* avoid "-0.00" labels */
       stdPaths.push(bstd);
       edgeLabels[e.from + '>' + e.to] = bstd.toFixed(2);
     });
@@ -873,10 +897,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function escXml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
+  /* Arrowheads drawn as plain polygons — no <marker>/context-stroke, which
+     some browsers don't support (heads would silently vanish and paths
+     would look undirected). */
+  function arrowHeadAt(x, y, dirX, dirY, color, size) {
+    var s = size || 11;
+    var len = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
+    var ux = dirX / len, uy = dirY / len;
+    var bx = x - ux * s, by = y - uy * s;
+    var wx = -uy * s * 0.42, wy = ux * s * 0.42;
+    return '<polygon points="' + x.toFixed(1) + ',' + y.toFixed(1) + ' ' +
+      (bx + wx).toFixed(1) + ',' + (by + wy).toFixed(1) + ' ' +
+      (bx - wx).toFixed(1) + ',' + (by - wy).toFixed(1) + '" fill="' + color + '"/>';
+  }
+
   function renderDiagram() {
     var svg = '<svg id="semb-svg" viewBox="0 0 ' + VW + ' ' + VH + '" xmlns="http://www.w3.org/2000/svg">';
-    svg += '<defs><marker id="sembArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/></marker>' +
-           '<marker id="sembArrowS" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 10 0 L 0 5 L 10 10 z" fill="context-stroke"/></marker></defs>';
     svg += '<rect x="0" y="0" width="' + VW + '" height="' + VH + '" fill="transparent" data-bg="1"/>';
 
     if (state.nodes.length === 0) {
@@ -899,11 +935,15 @@ document.addEventListener('DOMContentLoaded', function() {
           var nx = -(p2.y - p1.y), ny = p2.x - p1.x;
           var nl = Math.sqrt(nx * nx + ny * ny) || 1;
           var off = 42;
+          var cqx = mx + nx / nl * off, cqy = my + ny / nl * off;
+          var arcCol = 'rgba(255,255,255,0.35)';
           var label = 'ρ';
           if (fresh && state.annotations.rhoMap[na.id + '|' + nb.id] !== undefined) {
             label = 'ρ = ' + state.annotations.rhoMap[na.id + '|' + nb.id].toFixed(2);
           }
-          svg += '<path d="M ' + p1.x + ' ' + p1.y + ' Q ' + (mx + nx / nl * off) + ' ' + (my + ny / nl * off) + ' ' + p2.x + ' ' + p2.y + '" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#sembArrow)" marker-start="url(#sembArrowS)"/>';
+          svg += '<path d="M ' + p1.x + ' ' + p1.y + ' Q ' + cqx + ' ' + cqy + ' ' + p2.x + ' ' + p2.y + '" fill="none" stroke="' + arcCol + '" stroke-width="1.5" stroke-dasharray="5,4"/>';
+          svg += arrowHeadAt(p1.x, p1.y, p1.x - cqx, p1.y - cqy, arcCol, 8);
+          svg += arrowHeadAt(p2.x, p2.y, p2.x - cqx, p2.y - cqy, arcCol, 8);
           svg += '<text x="' + (mx + nx / nl * (off * 0.62)) + '" y="' + (my + ny / nl * (off * 0.62)) + '" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="11.5" font-family="monospace">' + label + '</text>';
         }
       }
@@ -919,7 +959,10 @@ document.addEventListener('DOMContentLoaded', function() {
       var nx = -(p2.y - p1.y), ny = p2.x - p1.x;
       var nl = Math.sqrt(nx * nx + ny * ny) || 1;
       var label = fresh ? (state.annotations.edgeLabels[e.from + '>' + e.to] || '…') : '…';
-      svg += '<line x1="' + p1.x + '" y1="' + p1.y + '" x2="' + p2.x + '" y2="' + p2.y + '" stroke="' + color + '" stroke-width="2" marker-end="url(#sembArrow)"/>';
+      var edx = p2.x - p1.x, edy = p2.y - p1.y;
+      var elen = Math.sqrt(edx * edx + edy * edy) || 1;
+      svg += '<line x1="' + p1.x + '" y1="' + p1.y + '" x2="' + (p2.x - edx / elen * 9) + '" y2="' + (p2.y - edy / elen * 9) + '" stroke="' + color + '" stroke-width="2"/>';
+      svg += arrowHeadAt(p2.x, p2.y, edx, edy, color);
       svg += '<text x="' + (mx + nx / nl * 13) + '" y="' + (my + ny / nl * 13) + '" text-anchor="middle" fill="' + color + '" font-size="12.5" font-weight="700" font-family="monospace">' + escXml(label) + '</text>';
       svg += '<line class="semb-edge-hit" data-edge="' + ei + '" x1="' + p1.x + '" y1="' + p1.y + '" x2="' + p2.x + '" y2="' + p2.y + '" stroke="rgba(0,0,0,0)" stroke-width="16"><title>Click to remove this path</title></line>';
     });
@@ -965,18 +1008,42 @@ document.addEventListener('DOMContentLoaded', function() {
     el.innerHTML = state.edges.map(function(e, i) {
       var nf = nodeById(e.from), nt = nodeById(e.to);
       return '<span class="semb-chip">' + escXml(nf.name) + ' → ' + escXml(nt.name) +
-        '<button type="button" data-chip="' + i + '" aria-label="Remove path">×</button></span>';
+        '<button type="button" class="flip" data-flip="' + i + '" title="Reverse direction" aria-label="Reverse direction">⇄</button>' +
+        '<button type="button" data-chip="' + i + '" title="Remove path" aria-label="Remove path">×</button></span>';
     }).join('');
     var btns = el.querySelectorAll('[data-chip]');
     for (var i = 0; i < btns.length; i++) {
       btns[i].addEventListener('click', function() { removeEdge(+this.getAttribute('data-chip')); });
     }
+    var flips = el.querySelectorAll('[data-flip]');
+    for (var f = 0; f < flips.length; f++) {
+      flips[f].addEventListener('click', function() { flipEdge(+this.getAttribute('data-flip')); });
+    }
+  }
+
+  function renderPathBar() {
+    var fromSel = document.getElementById('semb-path-from');
+    var toSel = document.getElementById('semb-path-to');
+    var keepF = fromSel.value, keepT = toSel.value;
+    var opts = state.nodes.map(function(nd) {
+      return '<option value="' + nd.id + '">' + escXml(nd.name) + '</option>';
+    }).join('');
+    fromSel.innerHTML = opts;
+    toSel.innerHTML = opts;
+    if (state.nodes.some(function(nd) { return nd.id === keepF; })) fromSel.value = keepF;
+    if (state.nodes.some(function(nd) { return nd.id === keepT; })) toSel.value = keepT;
+    else if (state.nodes.length > 1 && toSel.value === fromSel.value) toSel.selectedIndex = 1;
+    var off = state.nodes.length < 2;
+    fromSel.disabled = off;
+    toSel.disabled = off;
+    document.getElementById('semb-path-add').disabled = off;
   }
 
   function renderAll() {
     renderDiagram();
     renderChips();
     renderGrid();
+    renderPathBar();
   }
 
   /* ================= node editor ================= */
@@ -1006,6 +1073,7 @@ document.addEventListener('DOMContentLoaded', function() {
       renderDiagram();
       renderChips();
       renderGrid();
+      renderPathBar();
     });
     document.getElementById('semb-ed-del').addEventListener('click', function() { deleteNode(nd.id); });
     document.getElementById('semb-ed-done').addEventListener('click', closeEditor);
@@ -1088,14 +1156,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     var from = state.selected, to = id;
     state.selected = null;
+    /* canvas-only convenience: clicking an existing path's endpoints removes it */
+    var sameIdx = -1;
+    state.edges.forEach(function(e, i) {
+      if (e.from === from && e.to === to) sameIdx = i;
+    });
+    if (sameIdx >= 0) {
+      state.edges.splice(sameIdx, 1);
+      setStatus('Removed ' + nodeById(from).name + ' → ' + nodeById(to).name + '.', '');
+      bump(); scheduleEstimate(); renderDiagram(); renderChips();
+      return;
+    }
+    addDirectedPath(from, to);
+  }
+
+  /* Shared by the canvas gesture and the From → To selector */
+  function addDirectedPath(from, to) {
+    if (from === to) {
+      setStatus('Pick two different variables for a path.', 'err');
+      return;
+    }
     var sameIdx = -1, revIdx = -1;
     state.edges.forEach(function(e, i) {
       if (e.from === from && e.to === to) sameIdx = i;
       if (e.from === to && e.to === from) revIdx = i;
     });
     if (sameIdx >= 0) {
-      state.edges.splice(sameIdx, 1);
-      bump(); scheduleEstimate(); renderDiagram(); renderChips();
+      setStatus('That path is already drawn: ' + nodeById(from).name + ' → ' + nodeById(to).name + '.', 'warn');
       return;
     }
     var candidate = state.edges.slice();
@@ -1107,6 +1194,22 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     state.edges = candidate;
+    setStatus((revIdx >= 0 ? 'Reversed the existing path: now ' : 'Added path ') + nodeById(from).name + ' → ' + nodeById(to).name + '.', 'ok');
+    bump(); scheduleEstimate(); renderDiagram(); renderChips();
+  }
+
+  function flipEdge(i) {
+    var e = state.edges[i];
+    if (!e) return;
+    var candidate = state.edges.map(function(ee, j) {
+      return j === i ? { from: e.to, to: e.from } : ee;
+    });
+    if (!topoOK(state.nodes, candidate)) {
+      setStatus('Reversing ' + nodeById(e.from).name + ' → ' + nodeById(e.to).name + ' would create a cycle.', 'err');
+      return;
+    }
+    state.edges = candidate;
+    setStatus('Reversed direction: now ' + nodeById(e.to).name + ' → ' + nodeById(e.from).name + '.', 'ok');
     bump(); scheduleEstimate(); renderDiagram(); renderChips();
   }
 
@@ -1135,6 +1238,13 @@ document.addEventListener('DOMContentLoaded', function() {
     openEditor(id, true);
     scheduleEstimate();
     renderAll();
+  });
+
+  document.getElementById('semb-path-add').addEventListener('click', function() {
+    var from = document.getElementById('semb-path-from').value;
+    var to = document.getElementById('semb-path-to').value;
+    if (!from || !to) return;
+    addDirectedPath(from, to);
   });
 
   document.getElementById('semb-n').addEventListener('input', function(e) {
