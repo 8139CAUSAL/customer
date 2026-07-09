@@ -76,6 +76,17 @@
   .sem-table td.section-cell { font-weight: 700; color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; padding-top: 14px; }
 
   .semb-h3 { font-size: 15px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.4px; margin: 20px 0 4px; }
+
+  .semb-verdict {
+    background: var(--surface); border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 4px 0 8px;
+    font-size: 13.5px; line-height: 1.65; color: var(--text-muted);
+  }
+  .semb-verdict strong { color: var(--text); }
+  .semb-verdict .delta { font-family: "SF Mono","Fira Code",Consolas,monospace; color: var(--accent); font-weight: 700; }
+  .semb-verdict.sig { border-left-color: #4ade80; }
+  .semb-verdict.nosig { border-left-color: #fbbf24; }
+  .semb-verdict.na { border-left-color: rgba(255,255,255,0.25); }
 </style>
 </head>
 <body>
@@ -154,8 +165,9 @@
   <!-- SEM Workbench: draw-your-own model -->
   <div class="tool-section">
     <h2>SEM Workbench &mdash; Draw Your Own Model</h2>
-    <p class="tool-desc">A synthetic loyalty survey is loaded below: four latent constructs, each measured by three survey items. <strong>Draw the structural model you believe in</strong> &mdash; click one construct, then another, to add a causal path &mdash; then fit it to the data by maximum likelihood and judge it with standard goodness-of-fit statistics. Constructs with no incoming path are treated as exogenous and freely correlated (dashed arcs), as in Stata or lavaan. Competing models you fit are collected in the comparison table so you can argue about which structure the data actually supports.</p>
+    <p class="tool-desc">A synthetic loyalty survey is loaded below: four latent constructs, each measured by three survey items. The workbench does three things. <strong>(1)&nbsp;Draw the causal structure:</strong> click one construct, then another, to add a directed path; cycles are rejected so the graph stays a recursive DAG, and the drawn paths form the structural matrix <strong>B</strong> for estimation. <strong>(2)&nbsp;Test the fit:</strong> maximum likelihood compares the sample covariance <strong>S</strong> against the model-implied covariance <strong>&Sigma;</strong>, giving &chi;&sup2;, degrees of freedom, and a p-value (p &ge; .05 means your DAG is a statistically acceptable description of the data). <strong>(3)&nbsp;Compare two theories one-to-one:</strong> save any fitted model as Model&nbsp;A, draw a rival, and the nested &Delta;&chi;&sup2; difference test tells you whether the extra paths <em>significantly</em> improve fit. Constructs with no incoming path are exogenous and freely correlated (dashed arcs), as in Stata or lavaan.</p>
 
+    <h3 class="semb-h3">1 &middot; Draw the Causal Structure (DAG &rarr; B matrix)</h3>
     <div class="semb-check-row" id="semb-includes"></div>
 
     <div class="sem-diagram-wrap"><div id="semb-canvas"></div></div>
@@ -176,16 +188,26 @@
     <div class="semb-status" id="semb-status">Ready.</div>
 
     <div class="semb-results" id="semb-results">
-      <h3 class="semb-h3">Goodness of Fit</h3>
+      <h3 class="semb-h3">2 &middot; Goodness of Fit (Maximum-Likelihood &chi;&sup2;)</h3>
       <div class="sem-gof-grid" id="semb-gof"></div>
       <p id="semb-gof-note" style="font-size:12.5px;color:var(--text-muted);line-height:1.6;margin:6px 0 0;"></p>
+
+      <h3 class="semb-h3">3 &middot; One-to-One Model Comparison (&Delta;&chi;&sup2; Test)</h3>
+      <p style="font-size:12.5px;color:var(--text-muted);line-height:1.6;margin:0 0 8px;">Save a fitted model as <strong style="color:var(--text);">Model A</strong>, then draw and fit a rival &mdash; the current fit is always <strong style="color:var(--text);">Model B</strong>. If one model is a simplified version of the other (same constructs, a subset of its paths, no construct switching exogenous/endogenous status), the models are nested and the difference test applies: &Delta;&chi;&sup2; = &chi;&sup2;<sub>restricted</sub> &minus; &chi;&sup2;<sub>general</sub> with &Delta;df = df<sub>restricted</sub> &minus; df<sub>general</sub>. A significant result means the extra paths genuinely improve fit; otherwise parsimony says keep the simpler model. Non-nested pairs are compared with AIC/BIC instead.</p>
+      <div class="btn-row" style="margin: 6px 0 10px;">
+        <button class="calc-btn secondary" id="semb-save-a" type="button">Save current fit as Model A</button>
+      </div>
+      <div class="sem-table-wrap">
+        <table class="sem-table" id="semb-compare"></table>
+      </div>
+      <div id="semb-verdict" class="semb-verdict"></div>
 
       <h3 class="semb-h3">Parameter Estimates</h3>
       <div class="sem-table-wrap">
         <table class="sem-table" id="semb-est-table"></table>
       </div>
 
-      <h3 class="semb-h3">Models You Have Fit (this session)</h3>
+      <h3 class="semb-h3">Session Log (every model fit so far)</h3>
       <div class="sem-table-wrap">
         <table class="sem-table" id="semb-history"></table>
       </div>
@@ -544,7 +566,9 @@ document.addEventListener('DOMContentLoaded', function() {
     selected: null,
     n: 500,
     seed: 8139,
-    lastFit: null,   /* { signature, stdPaths, rhos, ... } */
+    lastFit: null,     /* { signature, stdPaths, rhoMap } for diagram labels */
+    currentFit: null,  /* Model B: snapshot of the most recent fit */
+    modelA: null,      /* saved comparison model */
     history: []
   };
 
@@ -699,6 +723,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('semb-results').classList.add('stale');
     setStatus(reason + ' — press Fit Model to re-estimate.', 'warn');
     renderAll();
+    renderComparison();
   }
 
   /* ================= interactions ================= */
@@ -770,7 +795,176 @@ document.addEventListener('DOMContentLoaded', function() {
   /* ================= fitting ================= */
 
   function gofItem(name, val, rule, good) {
-    return '<div class="sem-gof-item ' + (good ? 'good' : 'bad') + '"><strong>' + name + '</strong><span class="gof-val">' + val + '</span><span class="gof-rule">' + rule + '</span></div>';
+    var cls = good === null ? '' : (good ? ' good' : ' bad');
+    return '<div class="sem-gof-item' + cls + '"><strong>' + name + '</strong><span class="gof-val">' + val + '</span><span class="gof-rule">' + rule + '</span></div>';
+  }
+
+  function describeSpec(spec) {
+    var desc = spec.edges.length === 0
+      ? 'CFA only (no paths)'
+      : spec.edges.map(function(e) { return shortName(e.from) + '→' + shortName(e.to); }).join(', ');
+    if (spec.constructs.length < 4) desc += ' [' + spec.constructs.map(shortName).join(', ') + ' only]';
+    return desc;
+  }
+
+  /* Pure computation: fit a spec to the current cached survey data. */
+  function computeFit(spec) {
+    var idx = [];
+    spec.constructs.forEach(function(k) {
+      var ci = CONSTRUCTS.findIndex(function(c) { return c.key === k; });
+      for (var j = 0; j < 3; j++) idx.push(ci * 3 + j);
+    });
+    var S = subsetCov(ensureData(), idx);
+    var model = buildModel(spec);
+    var ldS = invLogDet(S).logDet;
+    var res = minimize(function(t) { return fml(S, model.sigma(t), ldS); }, model.theta0, 1200);
+    var Sigma = model.sigma(res.theta);
+    var fit = fitIndices(S, Sigma, state.n, model.q);
+    var u = model.unpack(res.theta);
+    return {
+      spec: { constructs: spec.constructs.slice(), edges: spec.edges.map(function(e) { return { from: e.from, to: e.to }; }) },
+      model: model, Sigma: Sigma, fit: fit, u: u, Phi: model.phi(u),
+      p: chi2P(fit.chi2, fit.df),
+      aic: fit.chi2 + 2 * model.q,
+      bic: fit.chi2 + model.q * Math.log(state.n),
+      desc: describeSpec(spec),
+      n: state.n, seed: state.seed,
+      signature: specSignature(spec)
+    };
+  }
+
+  function snapshotFit(cf) {
+    return {
+      desc: cf.desc, chi2: cf.fit.chi2, df: cf.fit.df, p: cf.p,
+      aic: cf.aic, bic: cf.bic, spec: cf.spec, n: cf.n, seed: cf.seed,
+      signature: cf.signature
+    };
+  }
+
+  /* ================= model comparison (Δχ² test) ================= */
+
+  function exoSetOf(spec) {
+    var hasIn = {};
+    spec.edges.forEach(function(e) { hasIn[e.to] = true; });
+    return spec.constructs.filter(function(k) { return !hasIn[k]; });
+  }
+  function sameSet(a, b) {
+    if (a.length !== b.length) return false;
+    var s = {};
+    a.forEach(function(x) { s[x] = true; });
+    return b.every(function(x) { return s[x]; });
+  }
+  function edgeKey(e) { return e.from + '>' + e.to; }
+  function edgesSubset(small, big) {
+    var s = {};
+    big.forEach(function(e) { s[edgeKey(e)] = true; });
+    return small.every(function(e) { return s[edgeKey(e)]; });
+  }
+  function edgesMinus(big, small) {
+    var s = {};
+    small.forEach(function(e) { s[edgeKey(e)] = true; });
+    return big.filter(function(e) { return !s[edgeKey(e)]; });
+  }
+
+  /* Nested iff: same constructs, one path set is a subset of the other, and
+     no construct changes exogenous/endogenous status between the two models
+     (dropping a construct's only incoming path frees its correlations with
+     the other exogenous latents — correlations the larger model constrains —
+     so the parameter spaces would not be nested). */
+  function nestingInfo(A, B) {
+    if (!sameSet(A.spec.constructs, B.spec.constructs)) return { type: 'diffvars' };
+    var aInB = edgesSubset(A.spec.edges, B.spec.edges);
+    var bInA = edgesSubset(B.spec.edges, A.spec.edges);
+    if (aInB && bInA) return { type: 'identical' };
+    var restricted, general, rLabel, gLabel;
+    if (aInB) { restricted = A; general = B; rLabel = 'Model A'; gLabel = 'Model B'; }
+    else if (bInA) { restricted = B; general = A; rLabel = 'Model B'; gLabel = 'Model A'; }
+    else return { type: 'nonnested', reason: 'neither model’s paths are a subset of the other’s' };
+    if (!sameSet(exoSetOf(restricted.spec), exoSetOf(general.spec))) {
+      return { type: 'nonnested', reason: 'removing the extra path(s) changes which constructs are exogenous, so the simpler model is not a constrained version of the larger one' };
+    }
+    return { type: 'nested', restricted: restricted, general: general, rLabel: rLabel, gLabel: gLabel };
+  }
+
+  function fmtP(p) { return p < 0.001 ? '<.001' : p.toFixed(3); }
+
+  function pathList(edges) {
+    return edges.map(function(e) {
+      return constructByKey(e.from).name + ' → ' + constructByKey(e.to).name;
+    }).join(', ');
+  }
+
+  function renderComparison() {
+    var tbl = document.getElementById('semb-compare');
+    var verdict = document.getElementById('semb-verdict');
+    var A = state.modelA;
+    var spec = currentSpec();
+    var freshB = state.currentFit && topoOrder(spec.constructs, spec.edges) &&
+                 state.currentFit.signature === specSignature(spec) ? state.currentFit : null;
+
+    var head = '<tr><th></th><th>Structural paths</th><th>χ²</th><th>df</th><th>p</th><th>AIC</th><th>BIC</th></tr>';
+    function row(label, f, hint) {
+      if (!f) return '<tr><td style="white-space:nowrap;">' + label + '</td><td colspan="6" style="font-family:inherit;color:var(--text-dim);">' + hint + '</td></tr>';
+      return '<tr><td style="white-space:nowrap;">' + label + '</td><td style="font-family:inherit;">' + escXml(f.desc) + (f.refit ? ' <span style="color:var(--text-dim);">(re-estimated on current sample)</span>' : '') + '</td>' +
+        '<td>' + f.chi2.toFixed(2) + '</td><td>' + f.df + '</td><td>' + (f.df === 0 ? '—' : fmtP(f.p)) + '</td>' +
+        '<td>' + f.aic.toFixed(1) + '</td><td>' + f.bic.toFixed(1) + '</td></tr>';
+    }
+    tbl.innerHTML = head +
+      row('Model A (saved)', A, 'Nothing saved yet — fit a model, then press “Save current fit as Model A”.') +
+      row('Model B (current)', freshB, state.currentFit ? 'The drawing changed since the last fit — press Fit Model.' : 'Fit the current drawing to fill this row.');
+
+    if (!A || !freshB) {
+      verdict.className = 'semb-verdict na';
+      verdict.innerHTML = 'The Δχ² test runs automatically once <strong>Model A</strong> is saved and the current drawing (<strong>Model B</strong>) is fitted on the same data.';
+      return;
+    }
+
+    var info = nestingInfo(A, freshB);
+    if (info.type === 'diffvars') {
+      verdict.className = 'semb-verdict na';
+      verdict.innerHTML = '<strong>Not comparable.</strong> The two models use different constructs, so their χ² values are computed on different data. Include the same constructs in both models to compare them.';
+      return;
+    }
+    if (info.type === 'identical') {
+      verdict.className = 'semb-verdict na';
+      verdict.innerHTML = '<strong>Model A and Model B are identical</strong> — draw a different structure (add or remove a path) to test something.';
+      return;
+    }
+    if (info.type === 'nonnested') {
+      var aicPick = A.aic < freshB.aic ? 'Model A' : 'Model B';
+      var bicPick = A.bic < freshB.bic ? 'Model A' : 'Model B';
+      verdict.className = 'semb-verdict na';
+      verdict.innerHTML = '<strong>Not nested</strong> (' + info.reason + '), so the Δχ² difference test does not apply. ' +
+        'Compare information criteria instead (lower is better): AIC favors <strong>' + aicPick + '</strong> (' + A.aic.toFixed(1) + ' vs ' + freshB.aic.toFixed(1) + '); ' +
+        'BIC favors <strong>' + bicPick + '</strong> (' + A.bic.toFixed(1) + ' vs ' + freshB.bic.toFixed(1) + ').';
+      return;
+    }
+
+    /* nested: Δχ² = χ²_restricted − χ²_general, Δdf = df_restricted − df_general */
+    var R = info.restricted, G = info.general;
+    var dChi = R.chi2 - G.chi2;
+    var dDf = R.df - G.df;
+    var added = edgesMinus(G.spec.edges, R.spec.edges);
+    if (dDf <= 0) {
+      verdict.className = 'semb-verdict na';
+      verdict.innerHTML = '<strong>Equal degrees of freedom</strong> — the models differ in paths but not in parameter count, so there is no Δχ² test to run.';
+      return;
+    }
+    if (dChi < -0.5) {
+      verdict.className = 'semb-verdict na';
+      verdict.innerHTML = '<strong>Numerical hiccup:</strong> the restricted ' + info.rLabel.replace('Model ', 'model ') + ' fit better than the general one, which nesting rules out — this is optimizer noise. Press Fit Model again (or draw a new sample) and re-compare.';
+      return;
+    }
+    dChi = Math.max(0, dChi);
+    var pd = chi2P(dChi, dDf);
+    var sig = pd < 0.05;
+    verdict.className = 'semb-verdict ' + (sig ? 'sig' : 'nosig');
+    verdict.innerHTML =
+      '<strong>' + info.rLabel + ' is nested within ' + info.gLabel + '</strong> (it removes: ' + escXml(pathList(added)) + ').<br>' +
+      '<span class="delta">Δχ² = ' + dChi.toFixed(2) + ', Δdf = ' + dDf + ', p ' + (pd < 0.001 ? '&lt; .001' : '= ' + pd.toFixed(3)) + '</span><br>' +
+      (sig
+        ? 'Significant: the extra path' + (added.length > 1 ? 's' : '') + ' in <strong>' + info.gLabel + '</strong> genuinely improve' + (added.length > 1 ? '' : 's') + ' fit beyond what ' + dDf + ' free parameter' + (dDf > 1 ? 's' : '') + ' would buy by chance. <strong>' + info.gLabel + ' is statistically superior.</strong>'
+        : 'Not significant: the extra path' + (added.length > 1 ? 's do' : ' does') + ' not improve fit more than chance would. By parsimony, <strong>prefer the simpler ' + info.rLabel + '</strong>.');
   }
 
   function doFit() {
@@ -793,19 +987,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
       try {
         var t0 = Date.now();
-        var idx = [];
-        spec.constructs.forEach(function(k) {
-          var ci = CONSTRUCTS.findIndex(function(c) { return c.key === k; });
-          for (var j = 0; j < 3; j++) idx.push(ci * 3 + j);
-        });
-        var S = subsetCov(ensureData(), idx);
-        var model = buildModel(spec);
-        var ldS = invLogDet(S).logDet;
-        var res = minimize(function(t) { return fml(S, model.sigma(t), ldS); }, model.theta0, 1200);
-        var Sigma = model.sigma(res.theta);
-        var fit = fitIndices(S, Sigma, state.n, model.q);
-        var u = model.unpack(res.theta);
-        var Phi = model.phi(u);
+        var cf = computeFit(spec);
+        var model = cf.model, Sigma = cf.Sigma, fit = cf.fit, u = cf.u, Phi = cf.Phi;
         var ms = Date.now() - t0;
 
         /* standardized quantities */
@@ -831,10 +1014,11 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         /* GOF panel */
-        var p = chi2P(fit.chi2, fit.df);
+        var p = cf.p;
         var gofHtml = '';
-        gofHtml += gofItem('χ² (df=' + fit.df + ')', fit.chi2.toFixed(2), 'want p ≥ .05', fit.df === 0 || p >= 0.05);
-        gofHtml += gofItem('p-value', fit.df === 0 ? '—' : (p < 0.001 ? '<.001' : p.toFixed(3)), 'model vs. saturated', fit.df === 0 || p >= 0.05);
+        gofHtml += gofItem('χ²', fit.chi2.toFixed(2), 'discrepancy of S vs Σ', fit.df === 0 || p >= 0.05);
+        gofHtml += gofItem('df', String(fit.df), 'moments − free params', null);
+        gofHtml += gofItem('p-value', fit.df === 0 ? '—' : fmtP(p), 'p ≥ .05 = acceptable fit', fit.df === 0 || p >= 0.05);
         gofHtml += gofItem('CFI', fit.cfi.toFixed(3), '≥ 0.95 good', fit.cfi >= 0.95);
         gofHtml += gofItem('TLI', fit.tli.toFixed(3), '≥ 0.95 good', fit.tli >= 0.95);
         gofHtml += gofItem('RMSEA', fit.rmsea.toFixed(3), '≤ 0.06 good', fit.rmsea <= 0.06);
@@ -875,16 +1059,22 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('semb-est-table').innerHTML = rows;
 
         /* history */
-        var desc = spec.edges.length === 0
-          ? 'CFA only (no paths)'
-          : spec.edges.map(function(e) { return shortName(e.from) + '→' + shortName(e.to); }).join(', ');
-        if (spec.constructs.length < 4) desc += ' [' + spec.constructs.map(shortName).join(', ') + ' only]';
         state.history.unshift({
-          desc: desc, n: state.n, chi2: fit.chi2, df: fit.df, p: p,
+          desc: cf.desc, n: state.n, chi2: fit.chi2, df: fit.df, p: p,
           cfi: fit.cfi, rmsea: fit.rmsea, srmr: fit.srmr
         });
         if (state.history.length > 10) state.history.pop();
         renderHistory();
+
+        /* Model B snapshot; re-estimate a saved Model A if the data changed
+           so the comparison always uses the same sample */
+        state.currentFit = snapshotFit(cf);
+        if (state.modelA && (state.modelA.n !== state.n || state.modelA.seed !== state.seed)) {
+          var acf = computeFit(state.modelA.spec);
+          state.modelA = snapshotFit(acf);
+          state.modelA.refit = true;
+        }
+        renderComparison();
 
         document.getElementById('semb-results').classList.remove('stale');
         setStatus('Fit complete in ' + (ms / 1000).toFixed(1) + 's · ' + model.q + ' parameters · χ²(' + fit.df + ') = ' + fit.chi2.toFixed(1) + '.', 'ok');
@@ -919,6 +1109,18 @@ document.addEventListener('DOMContentLoaded', function() {
   /* ================= toolbar wiring ================= */
 
   document.getElementById('semb-fit').addEventListener('click', doFit);
+
+  document.getElementById('semb-save-a').addEventListener('click', function() {
+    var spec = currentSpec();
+    if (!state.currentFit || !topoOrder(spec.constructs, spec.edges) ||
+        state.currentFit.signature !== specSignature(spec)) {
+      setStatus('Fit the current drawing first, then save it as Model A.', 'err');
+      return;
+    }
+    state.modelA = JSON.parse(JSON.stringify(state.currentFit));
+    setStatus('Saved as Model A: ' + state.modelA.desc + ' — now draw a rival structure and fit it.', 'ok');
+    renderComparison();
+  });
 
   document.getElementById('semb-preset-full').addEventListener('click', function() {
     state.included = { sat: true, conv: true, emo: true, beh: true };
@@ -957,6 +1159,7 @@ document.addEventListener('DOMContentLoaded', function() {
   /* initial render + fit of the default model */
   renderAll();
   renderHistory();
+  renderComparison();
   doFit();
 });
 </script>
