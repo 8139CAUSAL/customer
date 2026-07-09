@@ -48,6 +48,7 @@
     grid-template-columns: 1fr;
     gap: 24px;
   }
+  .clv-model .layout-grid > * { min-width: 0; }
   @media (min-width: 900px) {
     .clv-model .layout-grid { grid-template-columns: 300px 1fr; align-items: start; }
   }
@@ -392,11 +393,24 @@
           </div>
         </div>
 
+        <div class="metric-card" style="margin-top: 16px;">
+          <h4>Est. 12-Week Customer Value</h4>
+          <div class="metric-val" id="val-non-clv" style="color: #4ade80;">$0.00</div>
+          <div class="metric-sub" id="val-non-clv-detail">E[Tx] &times; Avg Spend</div>
+        </div>
+
+        <div class="content-card" style="margin-top: 16px;">
+          <h4>P(Alive) Decay If The Silence Continues</h4>
+          <div id="non_decay_chart" class="chart-container" style="height: 220px;"></div>
+          <p style="font-size: 12px; color: var(--text-muted); margin: 8px 0 0;">Holding the purchase history fixed, this shows how the model's belief that the customer is still active erodes with each additional week of silence.</p>
+        </div>
+
         <div class="formula-box" style="margin-top: 16px;">
           <strong>BG/NBD Formulas (Fader, Hardie &amp; Lee 2005):</strong><br>
           <small style="color: var(--text-muted);">
             P(Alive | x, t<sub>x</sub>, T) = 1 / (1 + &delta;) where &delta; = (a / (b + x &minus; 1)) &times; (&alpha; + T)<sup>r+x</sup> / (&alpha; + t<sub>x</sub>)<sup>r+x</sup><br>
-            E[X(t) | alive] = (r + x) / (&alpha; + T) &times; t &nbsp;&nbsp;|&nbsp;&nbsp; CLV = P(Alive) &times; E[Tx] &times; AvgSpend
+            E[Y(t) | x, t<sub>x</sub>, T] = ((a+b+x&minus;1)/(a&minus;1)) &times; [1 &minus; ((&alpha;+T)/(&alpha;+T+t))<sup>r+x</sup> &middot; <sub>2</sub>F<sub>1</sub>(r+x, b+x; a+b+x&minus;1; t/(&alpha;+T+t))] &times; P(Alive) &nbsp;&nbsp;(Eq. 10, exact)<br>
+            Value = E[Y(t)] &times; AvgSpend
           </small>
         </div>
       </div>
@@ -442,6 +456,8 @@ document.addEventListener('DOMContentLoaded', function() {
   var dPAlive = document.getElementById('val-p-alive');
   var svgCircle = document.getElementById('p_alive_circle');
   var dExpTx = document.getElementById('val-expected-tx');
+  var dNonClv = document.getElementById('val-non-clv');
+  var dNonClvDetail = document.getElementById('val-non-clv-detail');
 
   function updateContractual() {
     var months = 36;
@@ -510,9 +526,26 @@ document.addEventListener('DOMContentLoaded', function() {
     return 1 / (1 + d);
   }
 
-  function bgnbd_expectedTx(pAlive, x, T, r, alpha, t) {
-    var rateIfAlive = (r + x) / (alpha + T);
-    return pAlive * rateIfAlive * t;
+  // Gaussian hypergeometric 2F1(a,b;c;z) via power series (converges for |z| < 1)
+  function hyp2f1(ha, hb, hc, z) {
+    var term = 1, sum = 1;
+    for (var n = 0; n < 500; n++) {
+      term *= ((ha + n) * (hb + n)) / ((hc + n) * (n + 1)) * z;
+      sum += term;
+      if (Math.abs(term) < 1e-12 * Math.abs(sum)) break;
+    }
+    return sum;
+  }
+
+  // Exact conditional expected transactions over the next t periods,
+  // Fader, Hardie & Lee (2005) Eq. 10. pAlive is 1/(1 + delta), so we
+  // multiply by it instead of dividing by (1 + delta).
+  function bgnbd_expectedTx(pAlive, x, T, r, alpha, a, b, t) {
+    if (Math.abs(a - 1) < 1e-6) a = 1 + 1e-6; // removable singularity at a = 1
+    var z = t / (alpha + T + t);
+    var lead = (a + b + x - 1) / (a - 1);
+    var bracket = 1 - Math.pow((alpha + T) / (alpha + T + t), r + x) * hyp2f1(r + x, b + x, a + b + x - 1, z);
+    return Math.max(0, lead * bracket * pAlive);
   }
 
   function updateNonContractual() {
@@ -531,7 +564,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var avg_inter_tx = tx / Math.max(1, x);
 
     var p_alive = Math.max(0, Math.min(1, bgnbd_pAlive(x, tx, T, r, alpha, a, b)));
-    var expected = bgnbd_expectedTx(p_alive, x, T, r, alpha, 12);
+    var expected = bgnbd_expectedTx(p_alive, x, T, r, alpha, a, b, 12);
 
     dNonT.textContent = state.non_T + " weeks";
     dNonRec.textContent = state.non_recency + " weeks";
@@ -544,7 +577,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
     dExpTx.textContent = expected.toFixed(2);
 
+    var clv = expected * state.non_avg_spend;
+    dNonClv.textContent = "$" + clv.toFixed(2);
+    dNonClvDetail.textContent = expected.toFixed(2) + " expected tx × $" + state.non_avg_spend + " avg spend";
+
     drawTimeline(avg_inter_tx);
+    drawDecayChart(x, tx, T, r, alpha, a, b, p_alive);
+  }
+
+  function drawDecayChart(x, tx, T, r, alpha, a, b, p_now) {
+    var weeksAhead = 26;
+    var xs = [], ys = [];
+    for (var w = 0; w <= weeksAhead; w++) {
+      xs.push(w);
+      ys.push(bgnbd_pAlive(x, tx, T + w, r, alpha, a, b));
+    }
+    var traceDecay = {
+      x: xs, y: ys, mode: 'lines', name: 'P(Alive)',
+      line: { color: '#fb923c', width: 3 }, fill: 'tozeroy',
+      fillcolor: 'rgba(251,146,60,0.15)',
+      hovertemplate: '+%{x} wk silent: %{y:.1%}<extra></extra>'
+    };
+    var traceNow = {
+      x: [0], y: [p_now], mode: 'markers', name: 'Today',
+      marker: { color: '#f87171', size: 10 }, hoverinfo: 'none'
+    };
+    var layoutDecay = {
+      paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+      font: { color: 'rgba(255,255,255,0.7)', family: 'sans-serif' },
+      margin: { t: 10, b: 40, l: 40, r: 10 },
+      showlegend: false,
+      xaxis: { showgrid: false, title: { text: 'Additional weeks with no purchase', font: { size: 12 } } },
+      yaxis: { gridcolor: 'rgba(255,255,255,0.1)', range: [0, 1.05], tickformat: '.0%' }
+    };
+    Plotly.newPlot('non_decay_chart', [traceDecay, traceNow], layoutDecay, { displayModeBar: false, responsive: true });
   }
 
   function drawTimeline(avg_inter_tx) {
@@ -632,7 +698,7 @@ document.addEventListener('DOMContentLoaded', function() {
   inpNonT.addEventListener('input', function(e) { state.non_T = +e.target.value; updateNonContractual(); });
   inpNonRec.addEventListener('input', function(e) { state.non_recency = +e.target.value; updateNonContractual(); });
   inpNonFreq.addEventListener('input', function(e) { state.non_freq = +e.target.value; updateNonContractual(); });
-  inpNonAvgSpend.addEventListener('input', function(e) { state.non_avg_spend = +e.target.value; updateNonContractual(); });
+  inpNonAvgSpend.addEventListener('input', function(e) { state.non_avg_spend = +e.target.value || 0; updateNonContractual(); });
 
   var inpR = document.getElementById('inp-bgnbd-r');
   var inpAlpha = document.getElementById('inp-bgnbd-alpha');
