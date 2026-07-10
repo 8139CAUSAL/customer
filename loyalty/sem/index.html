@@ -21,6 +21,7 @@
   .semb-canvas-btn:hover { filter: brightness(1.1); }
 
   .semb-hint { font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; line-height: 1.5; }
+  .semb-none { font-size: 12.5px; color: var(--text-dim); }
 
   .semb-editor {
     background: var(--surface); border: 1px solid var(--accent); border-radius: 10px;
@@ -46,13 +47,6 @@
   .semb-editor .ed-rows { display: flex; gap: 8px 20px; flex-wrap: wrap; margin-top: 6px; }
   .semb-editor .ed-row { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
   .semb-editor .ed-row input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
-  .semb-editor .ed-row input[type=number] {
-    width: 64px; text-align: center; background: rgba(0,0,0,0.25);
-    border: 1px solid var(--border); border-radius: 5px; color: var(--accent);
-    font-family: "SF Mono","Fira Code",Consolas,monospace; font-size: 13px; font-weight: 700; padding: 5px 4px;
-  }
-  .semb-editor .ed-row input[type=number]:disabled { opacity: 0.3; }
-  .semb-editor .ed-row input[type=number]:focus { outline: none; border-color: var(--accent); }
   .semb-editor .ed-note { font-size: 12px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; }
 
   .semb-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; }
@@ -61,12 +55,6 @@
     background: var(--surface); border: 1px solid var(--border-soft); border-radius: 9999px;
     padding: 5px 6px 5px 12px; font-size: 12.5px; color: var(--text); font-weight: 600;
   }
-  .semb-chip input {
-    width: 58px; text-align: center; background: rgba(0,0,0,0.25);
-    border: 1px solid var(--border); border-radius: 5px; color: var(--accent);
-    font-family: "SF Mono","Fira Code",Consolas,monospace; font-size: 12.5px; font-weight: 700; padding: 3px 2px;
-  }
-  .semb-chip input:focus { outline: none; border-color: var(--accent); }
   .semb-chip button {
     background: rgba(255,255,255,0.08); border: none; color: var(--text-muted);
     width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 12px;
@@ -74,7 +62,11 @@
   }
   .semb-chip button:hover { background: rgba(248,113,113,0.25); color: #f87171; }
   .semb-chip button.flip:hover { background: rgba(45,212,191,0.25); color: var(--accent); }
-  .semb-chips .none { font-size: 12.5px; color: var(--text-dim); align-self: center; }
+  .semb-chip.flash { animation: chipflash 0.9s ease; }
+  @keyframes chipflash {
+    0% { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    100% { border-color: var(--border-soft); box-shadow: none; }
+  }
 
   .semb-pathbar {
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -88,29 +80,50 @@
     color: var(--text); font-family: inherit; font-size: 13px; padding: 7px 10px; min-width: 110px;
   }
   .semb-pathbar select:focus { outline: none; border-color: var(--accent); }
-  .semb-pathbar input {
-    width: 70px; text-align: center; background: rgba(0,0,0,0.25);
-    border: 1px solid var(--border); border-radius: 5px; color: var(--accent);
-    font-family: "SF Mono","Fira Code",Consolas,monospace; font-size: 13px; font-weight: 700; padding: 6px 4px;
-  }
-  .semb-pathbar input:focus { outline: none; border-color: var(--accent); }
-  .semb-pathbar select:disabled, .semb-pathbar button:disabled, .semb-pathbar input:disabled { opacity: 0.4; }
+  .semb-pathbar select:disabled, .semb-pathbar button:disabled { opacity: 0.4; }
 
-  /* implied correlation matrix (read-only output) */
+  /* data panel */
+  .semb-data-panel {
+    background: var(--surface); border: 1px solid var(--border-soft); border-radius: 10px;
+    padding: 14px 16px; margin: 10px 0 4px;
+  }
+  .semb-data-meta { display: flex; gap: 8px 22px; flex-wrap: wrap; font-size: 13px; color: var(--text-muted); font-weight: 600; margin-bottom: 10px; }
+  .semb-data-meta strong { color: var(--accent); font-family: "SF Mono","Fira Code",Consolas,monospace; }
+  .semb-cols { display: flex; gap: 8px; flex-wrap: wrap; }
+  .semb-col-chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--border-soft); border-radius: 9999px; padding: 5px 12px;
+    font-size: 12.5px; font-weight: 600; color: var(--text-muted); background: rgba(0,0,0,0.15);
+  }
+  .semb-col-chip.ok { border-color: rgba(74,222,128,0.5); color: #4ade80; }
+  .semb-col-chip.bad { border-color: rgba(248,113,113,0.4); color: #f87171; }
+  .semb-col-chip button {
+    background: rgba(45,212,191,0.15); border: none; color: var(--accent);
+    width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: 700;
+    line-height: 1; display: flex; align-items: center; justify-content: center;
+  }
+  .semb-col-chip button:hover { background: rgba(45,212,191,0.35); }
+  .semb-data-issues { color: #f87171; font-size: 12.5px; font-weight: 600; margin: 10px 0 0; line-height: 1.5; }
+
+  /* fit button */
+  .semb-fit-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 12px 0 6px; }
+  .semb-fit-btn {
+    font-family: inherit; font-size: 16px; font-weight: 800; letter-spacing: 0.3px;
+    background: var(--accent); color: var(--bg); border: none; border-radius: 12px;
+    padding: 14px 44px; cursor: pointer; box-shadow: 0 0 24px var(--accent-glow);
+    transition: filter 0.15s, transform 0.1s;
+  }
+  .semb-fit-btn:hover:not(:disabled) { filter: brightness(1.12); }
+  .semb-fit-btn:active:not(:disabled) { transform: translateY(1px); }
+  .semb-fit-btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+
+  /* matrices (read-only outputs) */
   .semb-grid { border-collapse: collapse; font-size: 13px; }
   .semb-grid th, .semb-grid td { padding: 7px 12px; text-align: center; border: 1px solid var(--border-soft); }
   .semb-grid th { color: var(--text-muted); font-weight: 700; font-size: 12px; background: rgba(255,255,255,0.04); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .semb-grid td { color: var(--text); font-family: "SF Mono","Fira Code",Consolas,monospace; }
   .semb-grid td.diag { color: var(--text-dim); background: rgba(255,255,255,0.03); }
   .semb-grid td.induced { color: #fbbf24; font-style: italic; }
-
-  .semb-n-wrap { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-muted); font-weight: 600; margin: 6px 0 0; }
-  .semb-n-wrap input {
-    width: 90px; text-align: center; background: rgba(0,0,0,0.25);
-    border: 1px solid var(--border); border-radius: 5px; color: var(--accent);
-    font-family: "SF Mono","Fira Code",Consolas,monospace; font-size: 13px; font-weight: 700; padding: 6px 4px;
-  }
-  .semb-n-wrap input:focus { outline: none; border-color: var(--accent); }
 
   .semb-status {
     min-height: 22px; margin: 10px 0 4px; font-size: 13px; font-weight: 600;
@@ -186,17 +199,17 @@
     </div>
   </div>
 
-  <!-- Causal path workbench: draw coefficients, correlations are computed -->
+  <!-- Path-analysis workbench: draw the DAG, load data, fit by ML -->
   <div class="tool-section">
-    <h2>Causal Path Workbench &mdash; Draw Causes, Read Off Correlations</h2>
-    <p class="tool-desc">You never type a correlation here. <strong>(1)&nbsp;Draw the causal model:</strong> create variables, draw directed paths, and type the causal coefficient directly on each path. <strong>(2)&nbsp;The engine computes the implied correlation matrix</strong> from your drawing via the RAM formulation &Sigma; = (I&nbsp;&minus;&nbsp;B)<sup>&minus;1</sup>&Psi;(I&nbsp;&minus;&nbsp;B)<sup>&minus;T</sup>, with residual variances set so every variable has unit variance &mdash; so your typed values are standardized coefficients and path-tracing algebra holds exactly. The matrix is a <em>read-only output</em>: watch variables with no arrow between them become correlated anyway through shared causes. <strong>(3)&nbsp;Designate a target</strong> to get every variable&rsquo;s total causal effect on it, and <strong>save your model as Model&nbsp;A</strong> to test any rival structure you draw next: the rival is fitted by maximum likelihood against Model&nbsp;A&rsquo;s implied matrix and judged with &chi;&sup2;, df, and p.</p>
+    <h2>Causal Path Workbench &mdash; Draw the Model, Let the Data Speak</h2>
+    <p class="tool-desc">This works the way a real SEM analysis does. <strong>(1)&nbsp;Draw the causal DAG</strong> &mdash; variables and directed arrows. <strong>(2)&nbsp;Load data</strong> &mdash; upload any CSV or load the built-in dataset; the sample size N is read straight from the file (its number of rows) and column names are matched to your variables. <strong>(3)&nbsp;Press Fit Model</strong> &mdash; the engine computes the covariance matrix S and the correlation matrix from the data, estimates every path by maximum likelihood, and paints the standardized coefficients back onto your arrows: a 1&nbsp;standard-deviation increase in the cause moves the effect by &beta; standard deviations. You also get every variable&rsquo;s total causal effect on your designated target and a live &chi;&sup2;/df/p test of whether your structure can reproduce the data.</p>
 
-    <h3 class="semb-h3">1 &middot; Draw the Causal Model (B matrix)</h3>
+    <h3 class="semb-h3">1 &middot; Draw the causal DAG</h3>
     <div class="sem-diagram-wrap">
       <button class="semb-canvas-btn" id="semb-add" type="button">+ Add Variable</button>
       <div id="semb-canvas"></div>
     </div>
-    <p class="semb-hint"><strong>Draw a path</strong> with the From&nbsp;&rarr;&nbsp;To bar (typing its coefficient there), or single-click one node then another on the canvas, or tick targets in a node&rsquo;s editor (double-click the node). <strong>Type each path&rsquo;s causal value</strong> on its chip below &mdash; clicking a path&rsquo;s arrow jumps to its chip. Reverse (&#8646;) or delete (&times;) paths from their chips; cycles are rejected. Double-click a node to rename it, delete it, or mark it as the <strong>target outcome</strong>. Drag nodes to arrange the diagram.</p>
+    <p class="semb-hint"><strong>Draw an arrow</strong> with the From&nbsp;&rarr;&nbsp;To bar, or single-click one node then another on the canvas, or tick targets in a node&rsquo;s editor (double-click the node). Reverse (&#8646;) or delete (&times;) arrows from their chips; cycles are rejected. Double-click a node to rename it (names must match your data&rsquo;s column names), delete it, or mark it as the <strong>target outcome</strong>. Drag nodes to arrange the diagram.</p>
 
     <div class="semb-editor" id="semb-editor" style="display:none;"></div>
 
@@ -205,46 +218,58 @@
       <select id="semb-path-from" aria-label="Path source variable"></select>
       <span class="pb-arrow">&rarr;</span>
       <select id="semb-path-to" aria-label="Path target variable"></select>
-      <span class="pb-label" style="font-weight:600;">value</span>
-      <input type="number" id="semb-path-val" step="0.05" min="-1.5" max="1.5" value="0.5" aria-label="Causal coefficient">
       <button class="calc-btn secondary" id="semb-path-add" type="button" style="padding:8px 18px;">Draw path</button>
     </div>
 
     <div class="semb-chips" id="semb-chips"></div>
 
-    <div class="semb-status" id="semb-status">Add at least two variables and a path to start.</div>
+    <div class="semb-status" id="semb-status">Click &ldquo;+ Add Variable&rdquo; to create your first variable.</div>
+
+    <h3 class="semb-h3">2 &middot; Load the data</h3>
+    <p class="semb-hint">Upload a CSV (first row = column names, numeric columns) or load the built-in dataset &mdash; 400 customers whose <em>satisfaction</em>, <em>convenience</em>, <em>loyalty</em>, and <em>repurchase</em> were generated by a known causal process, so you can try to recover it. N is taken from the data itself. Click <strong style="color:var(--accent);">+</strong> on a column chip to add it to the canvas as a variable.</p>
+    <div class="btn-row" style="margin:6px 0 0;">
+      <button class="calc-btn secondary" id="semb-upload-btn" type="button">Upload CSV</button>
+      <input type="file" id="semb-file" accept=".csv,.tsv,.txt" style="display:none">
+      <button class="calc-btn secondary" id="semb-default-btn" type="button">Load Default Dataset</button>
+    </div>
+    <div class="semb-data-panel" id="semb-data-panel"><span class="semb-none">No data loaded yet.</span></div>
+
+    <h3 class="semb-h3">3 &middot; Fit the model</h3>
+    <div class="semb-fit-row">
+      <button class="semb-fit-btn" id="semb-fit" type="button" disabled>Fit Model</button>
+      <div class="semb-status" id="semb-fit-status" style="margin:0;"></div>
+    </div>
 
     <div id="semb-results" style="display:none;">
-      <h3 class="semb-h3">2 &middot; Implied Correlation Matrix (computed &mdash; read only)</h3>
-      <p class="semb-hint" style="margin-bottom:8px;">Derived from your drawn coefficients, never typed. <span style="color:#fbbf24;font-style:italic;">Amber italic</span> cells are correlations <em>induced without a direct arrow</em> &mdash; the signature of chains and shared causes.</p>
-      <div class="sem-table-wrap" id="semb-implied"></div>
+      <h3 class="semb-h3">The fitted DAG &mdash; standardized path coefficients</h3>
+      <p class="semb-hint" style="margin-bottom:0;">The same structure and paths you drew, with the maximum-likelihood estimate printed on each arrow: a 1-standard-deviation increase in the cause changes the effect by &beta; standard deviations, holding its other modeled causes fixed.</p>
+      <div class="sem-diagram-wrap"><div id="semb-fitted"></div></div>
 
-      <h3 class="semb-h3">3 &middot; Causal Effects</h3>
+      <h3 class="semb-h3">S matrix &mdash; covariance (computed from the data)</h3>
+      <p class="semb-hint" style="margin-bottom:8px;">The actual sample covariance matrix of your modeled variables (divisor N&nbsp;&minus;&nbsp;1). This &mdash; together with N &mdash; is all the information the fit uses.</p>
+      <div class="sem-table-wrap" id="semb-smatrix"></div>
+
+      <h3 class="semb-h3">Correlation matrix (computed from the data)</h3>
+      <p class="semb-hint" style="margin-bottom:8px;">S rescaled to unit variances. <span style="color:#fbbf24;font-style:italic;">Amber italic</span> cells are correlations between variables <em>with no direct arrow in your model</em> &mdash; if your DAG fits, these arise through chains and shared causes alone.</p>
+      <div class="sem-table-wrap" id="semb-rmatrix"></div>
+
+      <h3 class="semb-h3">Causal effects</h3>
       <div id="semb-effects"></div>
 
-      <h3 class="semb-h3">4 &middot; Goodness of Fit &mdash; Test a Rival Model</h3>
-      <p style="font-size:12.5px;color:var(--text-muted);line-height:1.6;margin:0 0 8px;">Save the current drawing as <strong style="color:var(--text);">Model A (the &ldquo;true&rdquo; model)</strong> &mdash; its implied matrix becomes the data. Then redraw the structure however you like: the live drawing is <strong style="color:var(--text);">Model B</strong>, and its <em>structure</em> is re-estimated by maximum likelihood against Model&nbsp;A&rsquo;s matrix. A significant &chi;&sup2; means Model B&rsquo;s structure cannot reproduce the world Model&nbsp;A describes.</p>
-      <div class="btn-row" style="margin: 6px 0 6px;">
-        <button class="calc-btn secondary" id="semb-save-a" type="button">Save current model as Model A</button>
-        <label class="semb-n-wrap" style="margin:0;">Assumed sample size n
-          <input type="number" id="semb-n" value="200" min="10" max="100000" step="10">
-        </label>
-      </div>
-      <div class="sem-table-wrap">
-        <table class="sem-table" id="semb-compare"></table>
-      </div>
-      <div class="sem-gof-grid" id="semb-gof" style="display:none;"></div>
+      <h3 class="semb-h3">Goodness of fit &mdash; can your structure reproduce the data?</h3>
+      <p class="semb-hint" style="margin-bottom:8px;">&chi;&sup2; = (N&nbsp;&minus;&nbsp;1)&nbsp;&middot;&nbsp;F<sub>ML</sub> with N read from the dataset, df = distinct moments &minus; free parameters. Every <em>missing</em> arrow among downstream variables is a testable constraint; variables with no incoming arrow (exogenous) covary freely, as in standard path analysis.</p>
+      <div class="sem-gof-grid" id="semb-gof"></div>
       <div id="semb-verdict" class="semb-verdict"></div>
     </div>
 
     <details style="margin-top: 16px;">
-      <summary style="cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:6px 0;">Try it in 60 seconds: the donut confounder</summary>
+      <summary style="cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:6px 0;">Try it in 60 seconds: recover the hidden causal process</summary>
       <p style="font-size:13px;color:var(--text-muted);line-height:1.7;margin:8px 0 0;">
-        Create three variables and rename them <strong style="color:var(--text);">summer</strong>, <strong style="color:var(--text);">donut_sales</strong>, and <strong style="color:var(--text);">C</strong> (the confounder &mdash; say, boardwalk foot traffic).
-        Draw <strong style="color:var(--text);">C &rarr; summer</strong> and type 0.80 on it, then <strong style="color:var(--text);">C &rarr; donut_sales</strong> at 0.80.
-        The implied matrix now shows corr(summer, donut_sales) = <strong style="color:var(--text);">0.64</strong> in amber &mdash; correlated with <em>no arrow between them</em>, purely through C.
-        Mark donut_sales as the <em>target</em>: summer&rsquo;s total causal effect on it is 0 (association &ne; causation).
-        Now save this as <strong style="color:var(--text);">Model A</strong>, delete both paths, draw <strong style="color:var(--text);">summer &rarr; donut_sales</strong> directly, and watch the fit test reject the rival: &chi;&sup2;(1) &asymp; 98 at n = 200, p &lt; .001.
+        Press <strong style="color:var(--text);">Load Default Dataset</strong> (400 customers), then click <strong style="color:var(--text);">+</strong> on all four column chips to put them on the canvas.
+        Draw <strong style="color:var(--text);">satisfaction &rarr; loyalty</strong>, <strong style="color:var(--text);">convenience &rarr; loyalty</strong>, <strong style="color:var(--text);">loyalty &rarr; repurchase</strong>, and <strong style="color:var(--text);">convenience &rarr; repurchase</strong>.
+        Double-click <em>repurchase</em> and tick <em>Is Target</em>. Press <strong style="color:var(--text);">Fit Model</strong>: the arrows light up with &beta; &asymp; 0.50, 0.35, 0.71, 0.18, and the test reads &chi;&sup2;(1) &asymp; 1.3, p &asymp; .26 &mdash; the structure is consistent with the data.
+        Satisfaction&rsquo;s <em>total</em> effect on repurchase (&asymp; 0.35) flows entirely through loyalty.
+        Now delete <strong style="color:var(--text);">convenience &rarr; repurchase</strong> and refit: &chi;&sup2;(2) &asymp; 30, p &lt; .001 &mdash; the data reject that one missing arrow.
       </p>
     </details>
   </div>
@@ -299,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return { inv: I, logDet: logDet, negDet: sign < 0 };
   }
 
-  function fml(S, Sigma, logDetS) {
+  function fmlF(S, Sigma, logDetS) {
     if (!Sigma) return null;
     var res = invLogDet(Sigma);
     if (!res || res.negDet) return null;
@@ -307,36 +332,6 @@ document.addEventListener('DOMContentLoaded', function() {
     for (var i = 0; i < p; i++)
       for (var j = 0; j < p; j++) tr += S[i][j] * res.inv[j][i];
     return res.logDet + tr - logDetS - p;
-  }
-
-  function minimize(objective, theta0, iters) {
-    var th = theta0.slice(), n = th.length;
-    var m = new Array(n).fill(0), v = new Array(n).fill(0);
-    var lr = 0.05, b1 = 0.9, b2 = 0.999, eps = 1e-8, h = 1e-5;
-    var best = objective(th);
-    if (best === null) best = 1e10;
-    var bestTh = th.slice();
-    for (var t = 1; t <= iters; t++) {
-      var g = new Array(n), gn = 0, i;
-      for (i = 0; i < n; i++) {
-        var tp = th.slice(); tp[i] += h;
-        var tm = th.slice(); tm[i] -= h;
-        var fp = objective(tp); if (fp === null) fp = 1e10;
-        var fm = objective(tm); if (fm === null) fm = 1e10;
-        g[i] = (fp - fm) / (2 * h);
-      }
-      for (i = 0; i < n; i++) {
-        m[i] = b1 * m[i] + (1 - b1) * g[i];
-        v[i] = b2 * v[i] + (1 - b2) * g[i] * g[i];
-        th[i] -= lr * (m[i] / (1 - Math.pow(b1, t))) / (Math.sqrt(v[i] / (1 - Math.pow(b2, t))) + eps);
-        gn += g[i] * g[i];
-      }
-      var f = objective(th);
-      if (f !== null && f < best) { best = f; bestTh = th.slice(); }
-      if (Math.sqrt(gn) < 1e-7) break;
-      if (t === Math.floor(iters * 0.6)) lr = 0.01;
-    }
-    return { theta: bestTh, f: best };
   }
 
   function chi2P(x, k) {
@@ -374,107 +369,169 @@ document.addEventListener('DOMContentLoaded', function() {
     return h * Math.exp(-x2 + a * Math.log(x2) - lgamma(a));
   }
 
-  /* Forward RAM: typed standardized coefficients -> implied correlation
-     matrix. Exogenous variables independent; residual variances set to
-     1 - explained so every variable has unit variance (which is what makes
-     0.8 x 0.8 = 0.64 path-tracing hold exactly). */
-  function impliedCorr(ids, edges) {
-    var pos = {};
-    ids.forEach(function(id, i) { pos[id] = i; });
-    var indeg = {}, adj = {};
-    ids.forEach(function(id) { indeg[id] = 0; adj[id] = []; });
-    edges.forEach(function(e) { indeg[e.to]++; adj[e.from].push(e.to); });
-    var queue = ids.filter(function(id) { return indeg[id] === 0; });
-    var order = [];
-    while (queue.length) {
-      var k0 = queue.shift();
-      order.push(k0);
-      adj[k0].forEach(function(t) { if (--indeg[t] === 0) queue.push(t); });
-    }
-    if (order.length !== ids.length) return { error: 'cycle' };
-    var p = ids.length;
-    var Phi = [];
-    for (var i = 0; i < p; i++) Phi.push(new Array(p).fill(0));
-    var done = {}, resid = {};
-    for (var oi = 0; oi < order.length; oi++) {
-      var k = order[oi], ki = pos[k];
-      var parents = edges.filter(function(e) { return e.to === k; });
-      if (parents.length === 0) {
-        Phi[ki][ki] = 1;
-      } else {
-        for (var j = 0; j < order.length; j++) {
-          var jd = order[j];
-          if (!done[jd]) continue;
-          var ji = pos[jd], s = 0;
-          parents.forEach(function(e) { s += e.b * Phi[pos[e.from]][ji]; });
-          Phi[ki][ji] = s; Phi[ji][ki] = s;
-        }
-        var explained = 0;
-        parents.forEach(function(e1) {
-          parents.forEach(function(e2) {
-            explained += e1.b * e2.b * Phi[pos[e1.from]][pos[e2.from]];
-          });
-        });
-        resid[k] = 1 - explained;
-        if (resid[k] <= 0.0001) {
-          return { error: 'overflow', node: k, explained: explained };
-        }
-        Phi[ki][ki] = 1;
+  /* Sample moments from data columns */
+  function covCorr(X) {
+    var p = X.length, n = X[0].length;
+    var mean = X.map(function(c) { var s = 0; for (var i = 0; i < n; i++) s += c[i]; return s / n; });
+    var S = [];
+    for (var i = 0; i < p; i++) {
+      S.push([]);
+      for (var j = 0; j < p; j++) {
+        var s = 0;
+        for (var r = 0; r < n; r++) s += (X[i][r] - mean[i]) * (X[j][r] - mean[j]);
+        S[i].push(s / (n - 1));
       }
-      done[k] = true;
     }
-    return { Phi: Phi, resid: resid };
+    var sd = S.map(function(row, i) { return Math.sqrt(row[i]); });
+    var R = S.map(function(row, i) { return row.map(function(v, j) { return v / (sd[i] * sd[j]); }); });
+    return { mean: mean, S: S, R: R, sd: sd, n: n };
   }
 
-  /* Fitting model (free parameters) for the rival-vs-ModelA chi-square */
-  function buildPathModel(p, edges) {
-    var hasIn = {};
-    edges.forEach(function(e) { hasIn[e.to] = true; });
+  /* ML fit of a recursive path model to a correlation matrix R.
+     For a recursive DAG with uncorrelated residuals and freely covarying
+     exogenous variables, the ML solution is closed form: each endogenous
+     variable's coefficients are its OLS regression on its parents, the
+     exogenous block of Psi equals the sample block, and residual variances
+     are the regression leftovers. */
+  function fitPathModel(R, edges) {
+    var p = R.length, i;
+    var B = [], Psi = [];
+    for (i = 0; i < p; i++) { B.push(new Array(p).fill(0)); Psi.push(new Array(p).fill(0)); }
+    var parentsOf = [];
+    for (i = 0; i < p; i++) parentsOf.push([]);
+    edges.forEach(function(e) { parentsOf[e.to].push(e.from); });
     var exo = [], endo = [];
-    for (var i = 0; i < p; i++) (hasIn[i] ? endo : exo).push(i);
-    var exoPairs = [];
-    for (var a = 0; a < exo.length; a++)
-      for (var b = a + 1; b < exo.length; b++) exoPairs.push([exo[a], exo[b]]);
-    var q = edges.length + exo.length + exoPairs.length + endo.length;
-    function sigma(theta) {
-      var idx = 0;
-      var bs = theta.slice(idx, idx + edges.length); idx += edges.length;
-      var evs = theta.slice(idx, idx + exo.length).map(Math.exp); idx += exo.length;
-      var ers = theta.slice(idx, idx + exoPairs.length).map(Math.tanh); idx += exoPairs.length;
-      var dvs = theta.slice(idx, idx + endo.length).map(Math.exp);
-      var Psi = [];
-      for (var i = 0; i < p; i++) Psi.push(new Array(p).fill(0));
-      exo.forEach(function(k, ki) { Psi[k][k] = evs[ki]; });
-      endo.forEach(function(k, ki) { Psi[k][k] = dvs[ki]; });
-      exoPairs.forEach(function(pr, pi) {
-        var c = ers[pi] * Math.sqrt(Psi[pr[0]][pr[0]] * Psi[pr[1]][pr[1]]);
-        Psi[pr[0]][pr[1]] = c; Psi[pr[1]][pr[0]] = c;
+    for (i = 0; i < p; i++) (parentsOf[i].length ? endo : exo).push(i);
+    for (var ei = 0; ei < endo.length; ei++) {
+      var j = endo[ei], pa = parentsOf[j];
+      var Rpp = pa.map(function(a) { return pa.map(function(b) { return R[a][b]; }); });
+      var inv = invLogDet(Rpp);
+      if (!inv) return { error: 'collinear', node: j };
+      var b = pa.map(function(_, ai) {
+        var s = 0;
+        for (var bi = 0; bi < pa.length; bi++) s += inv.inv[ai][bi] * R[pa[bi]][j];
+        return s;
       });
-      var IB = [];
-      for (var i2 = 0; i2 < p; i2++) { IB.push(new Array(p).fill(0)); IB[i2][i2] = 1; }
-      edges.forEach(function(e, ei) { IB[e.to][e.from] = -bs[ei]; });
-      var inv = invLogDet(IB);
-      if (!inv) return null;
-      var A = inv.inv;
-      var S = [];
-      for (var i3 = 0; i3 < p; i3++) {
-        S.push([]);
-        for (var j3 = 0; j3 < p; j3++) {
-          var s = 0;
-          for (var a2 = 0; a2 < p; a2++)
-            for (var b2 = 0; b2 < p; b2++) s += A[i3][a2] * Psi[a2][b2] * A[j3][b2];
-          S[i3].push(s);
-        }
-      }
-      return S;
+      var psi = R[j][j];
+      for (var ai2 = 0; ai2 < pa.length; ai2++) psi -= b[ai2] * R[pa[ai2]][j];
+      if (!(psi > 1e-9)) return { error: 'collinear', node: j };
+      for (ai2 = 0; ai2 < pa.length; ai2++) B[j][pa[ai2]] = b[ai2];
+      Psi[j][j] = psi;
     }
-    var theta0 = [];
-    var i4;
-    for (i4 = 0; i4 < edges.length; i4++) theta0.push(0.2);
-    for (i4 = 0; i4 < exo.length; i4++) theta0.push(0);
-    for (i4 = 0; i4 < exoPairs.length; i4++) theta0.push(0);
-    for (i4 = 0; i4 < endo.length; i4++) theta0.push(Math.log(0.5));
-    return { sigma: sigma, theta0: theta0, q: q };
+    exo.forEach(function(a) { exo.forEach(function(b2) { Psi[a][b2] = R[a][b2]; }); });
+    var IB = [];
+    for (i = 0; i < p; i++) { IB.push(new Array(p).fill(0)); IB[i][i] = 1; }
+    edges.forEach(function(e) { IB[e.to][e.from] = -B[e.to][e.from]; });
+    var invIB = invLogDet(IB);
+    if (!invIB) return { error: 'singular' };
+    var A = invIB.inv;
+    var Sigma = [];
+    for (i = 0; i < p; i++) {
+      Sigma.push([]);
+      for (var j2 = 0; j2 < p; j2++) {
+        var s2 = 0;
+        for (var a3 = 0; a3 < p; a3++)
+          for (var b3 = 0; b3 < p; b3++) s2 += A[i][a3] * Psi[a3][b3] * A[j2][b3];
+        Sigma[i].push(s2);
+      }
+    }
+    var ldR = invLogDet(R);
+    if (!ldR || ldR.negDet) return { error: 'data-singular' };
+    var F = fmlF(R, Sigma, ldR.logDet);
+    if (F === null) return { error: 'singular' };
+    var q = edges.length + exo.length + exo.length * (exo.length - 1) / 2 + endo.length;
+    var df = p * (p + 1) / 2 - q;
+    return { B: B, Psi: Psi, Sigma: Sigma, total: A, F: Math.max(0, F), q: q, df: df, exo: exo, endo: endo };
+  }
+
+  /* ================= data: CSV + built-in dataset ================= */
+
+  function parseCSV(text, fname) {
+    text = String(text).replace(/^\uFEFF/, '');
+    var lines = text.split(/\r\n|\r|\n/).filter(function(l) { return l.trim() !== ''; });
+    if (lines.length < 3) return { error: 'Need a header row plus at least two data rows.' };
+    var counts = { ',': (lines[0].match(/,/g) || []).length, '\t': (lines[0].match(/\t/g) || []).length, ';': (lines[0].match(/;/g) || []).length };
+    var delim = ',';
+    if (counts['\t'] > counts[delim]) delim = '\t';
+    if (counts[';'] > counts[delim]) delim = ';';
+    function splitLine(l) {
+      var out = [], cur = '', inQ = false;
+      for (var i = 0; i < l.length; i++) {
+        var ch = l[i];
+        if (inQ) {
+          if (ch === '"') { if (l[i + 1] === '"') { cur += '"'; i++; } else inQ = false; }
+          else cur += ch;
+        }
+        else if (ch === '"') inQ = true;
+        else if (ch === delim) { out.push(cur); cur = ''; }
+        else cur += ch;
+      }
+      out.push(cur);
+      return out;
+    }
+    var heads = splitLine(lines[0]).map(function(h) { return h.trim(); });
+    if (heads.length < 2) return { error: 'Found only one column — SEM needs at least two.' };
+    if (heads.some(function(h) { return h === ''; })) return { error: 'The header row has an empty column name.' };
+    var keys = heads.map(function(h) { return h.toLowerCase(); });
+    for (var d1 = 0; d1 < keys.length; d1++)
+      for (var d2 = d1 + 1; d2 < keys.length; d2++)
+        if (keys[d1] === keys[d2]) return { error: 'Duplicate column name “' + heads[d1] + '” (matching is case-insensitive).' };
+    var cols = {}, finite = {};
+    keys.forEach(function(k) { cols[k] = []; finite[k] = 0; });
+    for (var r = 1; r < lines.length; r++) {
+      var cells = splitLine(lines[r]);
+      for (var ci = 0; ci < keys.length; ci++) {
+        var raw = (cells[ci] === undefined ? '' : cells[ci]).trim();
+        var v = raw === '' ? NaN : Number(raw);
+        if (isFinite(v)) finite[keys[ci]]++;
+        cols[keys[ci]].push(v);
+      }
+    }
+    return { name: fname || 'uploaded.csv', headers: heads, keys: keys, cols: cols, finite: finite, n: lines.length - 1 };
+  }
+
+  /* Built-in dataset: 400 customers from a known causal process.
+     True standardized structure:
+       corr(satisfaction, convenience) = 0.35 (exogenous, free)
+       loyalty    = 0.55·satisfaction + 0.30·convenience + e   (resid var 0.492)
+       repurchase = 0.65·loyalty      + 0.20·convenience + e   (resid var 0.40945) */
+  function mulberry32(a) {
+    return function() {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function defaultDataset() {
+    var rnd = mulberry32(20260710);
+    function gauss() {
+      var u = 0, v = 0;
+      while (u === 0) u = rnd();
+      while (v === 0) v = rnd();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+    var N = 400, sat = [], conv = [], loy = [], rep = [];
+    for (var i = 0; i < N; i++) {
+      var g = gauss();
+      var satZ = Math.sqrt(0.65) * gauss() + Math.sqrt(0.35) * g;
+      var convZ = Math.sqrt(0.65) * gauss() + Math.sqrt(0.35) * g;
+      var loyZ = 0.55 * satZ + 0.30 * convZ + Math.sqrt(0.492) * gauss();
+      var repZ = 0.65 * loyZ + 0.20 * convZ + Math.sqrt(0.40945) * gauss();
+      sat.push(Math.round((7.1 + 1.3 * satZ) * 10) / 10);
+      conv.push(Math.round((5.6 + 1.2 * convZ) * 10) / 10);
+      loy.push(Math.round(63 + 15 * loyZ));
+      rep.push(Math.round((8.5 + 3.2 * repZ) * 10) / 10);
+    }
+    return {
+      name: 'loyalty_survey_default.csv (built-in)',
+      headers: ['satisfaction', 'convenience', 'loyalty', 'repurchase'],
+      keys: ['satisfaction', 'convenience', 'loyalty', 'repurchase'],
+      cols: { satisfaction: sat, convenience: conv, loyalty: loy, repurchase: rep },
+      finite: { satisfaction: N, convenience: N, loyalty: N, repurchase: N },
+      n: N
+    };
   }
 
   /* ================= state ================= */
@@ -488,19 +545,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
   var state = {
     nodes: [],        /* {id, name, x, y, color} */
-    edges: [],        /* {from, to, b} — b is the typed causal coefficient */
+    edges: [],        /* {from, to} — structure only; coefficients come from the fit */
     targetId: null,
-    n: 200,
     selected: null,
     editing: null,
     nodeCounter: 0,
-    modelA: null      /* {desc, ids, S (implied matrix), names} */
+    data: null,       /* {name, headers, keys, cols, finite, n} */
+    fit: null,        /* results of the last successful fit */
+    stale: false      /* model/data changed since last fit */
   };
 
   function nodeById(id) {
     for (var i = 0; i < state.nodes.length; i++) if (state.nodes[i].id === id) return state.nodes[i];
     return null;
   }
+
+  function colKey(name) { return String(name).trim().toLowerCase(); }
 
   function topoOK(nodes, edges) {
     var indeg = {}, adj = {};
@@ -520,13 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return seen === nodes.length;
   }
 
-  /* ================= recompute (forward, closed-form) ================= */
-
-  var recomputeTimer = null;
-  function scheduleRecompute() {
-    if (recomputeTimer) clearTimeout(recomputeTimer);
-    recomputeTimer = setTimeout(recompute, 80);
-  }
+  /* ================= status lines ================= */
 
   function setStatus(msg, cls) {
     var el = document.getElementById('semb-status');
@@ -534,184 +588,70 @@ document.addEventListener('DOMContentLoaded', function() {
     el.textContent = msg;
   }
 
+  function setFitStatus(msg, cls) {
+    var el = document.getElementById('semb-fit-status');
+    el.className = 'semb-status' + (cls ? ' ' + cls : '');
+    el.style.margin = '0';
+    el.textContent = msg;
+  }
+
+  function drawStatus() {
+    if (state.nodes.length === 0) setStatus('Click “+ Add Variable” to create your first variable.', '');
+    else if (state.nodes.length === 1) setStatus('Add a second variable, then draw an arrow between them.', '');
+    else if (state.edges.length === 0) setStatus('Draw arrows: use the From → To bar, or click one node then another.', '');
+    else setStatus('Structure: ' + state.nodes.length + ' variables, ' + state.edges.length + ' directed arrow' + (state.edges.length === 1 ? '' : 's') + '.', '');
+  }
+
   function fmtP(p) { return p < 0.001 ? '<.001' : p.toFixed(3); }
+  function fmtCov(v) { var a = Math.abs(v); return v.toFixed(a >= 100 ? 1 : a >= 10 ? 2 : 3); }
   function escXml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
-  function recompute() {
-    if (state.nodes.length < 2) {
-      document.getElementById('semb-results').style.display = 'none';
-      setStatus(state.nodes.length === 0
-        ? 'Click “+ Add Variable” to create your first variable.'
-        : 'Add a second variable, then draw a path between them.', '');
-      return;
-    }
-    var ids = state.nodes.map(function(nd) { return nd.id; });
-    var out = impliedCorr(ids, state.edges);
-    if (out.error === 'overflow') {
-      document.getElementById('semb-results').style.display = 'none';
-      setStatus('The paths into “' + nodeById(out.node).name + '” imply ' + (out.explained * 100).toFixed(0) +
-        '% of its variance explained — impossible (max 100%). Reduce those coefficients.', 'err');
-      return;
-    }
-    if (out.error) {
-      document.getElementById('semb-results').style.display = 'none';
-      setStatus('The model contains a cycle — remove a path.', 'err');
-      return;
-    }
-    var Phi = out.Phi, resid = out.resid;
-    document.getElementById('semb-results').style.display = '';
+  /* ================= match validation + fit gate ================= */
 
-    /* --- implied correlation matrix (read-only) --- */
-    var directPair = {};
-    state.edges.forEach(function(e) {
-      directPair[e.from + '|' + e.to] = true;
-      directPair[e.to + '|' + e.from] = true;
+  function validateMatch() {
+    var out = { unmatched: [], unusable: [], dup: [] };
+    if (!state.data) return out;
+    var seen = {};
+    state.nodes.forEach(function(nd) {
+      var k = colKey(nd.name);
+      if (seen[k]) out.dup.push(nd.name);
+      seen[k] = true;
+      if (!state.data.cols[k]) out.unmatched.push(nd.name);
+      else if (state.data.finite[k] < 3) out.unusable.push(nd.name);
     });
-    var html = '<table class="semb-grid"><tr><th></th>';
-    state.nodes.forEach(function(nd) { html += '<th title="' + escXml(nd.name) + '">' + escXml(nd.name) + '</th>'; });
-    html += '</tr>';
-    state.nodes.forEach(function(ri, i) {
-      html += '<tr><th title="' + escXml(ri.name) + '">' + escXml(ri.name) + '</th>';
-      state.nodes.forEach(function(ci, j) {
-        if (i === j) { html += '<td class="diag">1.00</td>'; return; }
-        var v = Phi[i][j];
-        var induced = !directPair[ri.id + '|' + ci.id] && Math.abs(v) > 0.005;
-        html += '<td' + (induced ? ' class="induced" title="No direct arrow — induced by the causal structure"' : '') + '>' + v.toFixed(2) + '</td>';
-      });
-      html += '</tr>';
-    });
-    html += '</table>';
-    document.getElementById('semb-implied').innerHTML = html;
+    return out;
+  }
 
-    /* --- causal effects --- */
-    var eh = '';
-    var pos = {};
-    ids.forEach(function(id, i) { pos[id] = i; });
-    if (state.targetId && nodeById(state.targetId)) {
-      var P = ids.length;
-      var IB = [];
-      for (var bi = 0; bi < P; bi++) { IB.push(new Array(P).fill(0)); IB[bi][bi] = 1; }
-      state.edges.forEach(function(e) { IB[pos[e.to]][pos[e.from]] = -e.b; });
-      var inv = invLogDet(IB);
-      if (inv) {
-        var tgt = nodeById(state.targetId);
-        var trow = inv.inv[pos[state.targetId]];
-        eh += '<div class="sem-table-wrap"><table class="sem-table"><tr><th>Total causal effect on target “' + escXml(tgt.name) + '”</th><th>Effect (direct + indirect)</th><th>Implied correlation</th></tr>';
-        ids.forEach(function(id, ix) {
-          if (id === state.targetId) return;
-          var te = ix === pos[state.targetId] ? 0 : trow[ix];
-          eh += '<tr><td>' + escXml(nodeById(id).name) + '</td><td class="accent-cell">' + te.toFixed(3) + '</td><td>' + Phi[pos[state.targetId]][ix].toFixed(3) + '</td></tr>';
-        });
-        var tR2 = resid[state.targetId] !== undefined ? 1 - resid[state.targetId] : 0;
-        eh += '<tr><td>R² of target (variance explained by its causes)</td><td colspan="2" class="accent-cell">' + tR2.toFixed(3) + '</td></tr>';
-        eh += '</table></div>';
-        eh += '<p style="font-size:12px;color:var(--text-dim);margin:2px 0 0;">Where the total effect is 0 but the implied correlation is not, the association is spurious — driven by confounding, not causation.</p>';
-      }
-    } else {
-      eh += '<p style="font-size:12.5px;color:var(--text-dim);margin:4px 0;">No target designated. Double-click a variable and tick <em>Is Target</em> to get every variable’s total causal effect on it.</p>';
+  function updateFitGate() {
+    var btn = document.getElementById('semb-fit');
+    var reason = null, cls = '';
+    if (state.nodes.length < 2) reason = 'Draw a DAG first — at least two variables.';
+    else if (!state.data) reason = 'Load data (step 2) — the fit needs real observations.';
+    else {
+      var v = validateMatch();
+      if (v.dup.length) { reason = 'Two variables share the name “' + v.dup[0] + '” — rename one.'; cls = 'err'; }
+      else if (v.unmatched.length) { reason = 'No data column matches: ' + v.unmatched.join(', ') + '. Rename the variable(s) or upload data containing them.'; cls = 'err'; }
+      else if (v.unusable.length) { reason = 'Column “' + v.unusable[0] + '” has fewer than 3 numeric values — it can’t be modeled.'; cls = 'err'; }
     }
-    /* R² of endogenous variables */
-    var endoIds = Object.keys(resid);
-    if (endoIds.length > 0) {
-      eh += '<div class="sem-table-wrap"><table class="sem-table"><tr><th>Endogenous variable</th><th>R² (variance explained)</th><th>Residual variance</th></tr>';
-      endoIds.forEach(function(id) {
-        eh += '<tr><td>' + escXml(nodeById(id).name) + '</td><td class="accent-cell">' + (1 - resid[id]).toFixed(3) + '</td><td>' + resid[id].toFixed(3) + '</td></tr>';
-      });
-      eh += '</table></div>';
-    }
-    document.getElementById('semb-effects').innerHTML = eh;
+    btn.disabled = !!reason;
+    if (reason) setFitStatus(reason, cls);
+    else if (state.fit && !state.stale) setFitStatus('Fitted. Edit the model or load new data, then refit.', 'ok');
+    else if (state.stale) setFitStatus('Model or data changed — press “Fit Model” to re-estimate.', 'warn');
+    else setFitStatus('Ready: ' + state.nodes.length + ' variables matched to “' + state.data.name + '” (N = ' + state.data.n + ').', 'ok');
+  }
 
-    /* --- rival fit vs Model A --- */
-    renderComparison(Phi);
+  function clearFit() {
+    if (state.fit) { state.fit = null; state.stale = true; }
+    document.getElementById('semb-results').style.display = 'none';
+  }
 
-    setStatus('Live: implied correlations recomputed from your drawn coefficients (' + state.nodes.length + ' variables, ' + state.edges.length + ' paths).', 'ok');
+  /* one call after every mutation keeps every panel in sync */
+  function syncAll() {
     renderDiagram();
-  }
-
-  /* ================= Model A vs rival Model B ================= */
-
-  function gofItem(name, val, rule, good) {
-    var cls = good === null ? '' : (good ? ' good' : ' bad');
-    return '<div class="sem-gof-item' + cls + '"><strong>' + name + '</strong><span class="gof-val">' + val + '</span><span class="gof-rule">' + rule + '</span></div>';
-  }
-
-  function renderComparison(PhiCurrent) {
-    var tbl = document.getElementById('semb-compare');
-    var gofEl = document.getElementById('semb-gof');
-    var verdict = document.getElementById('semb-verdict');
-    var A = state.modelA;
-
-    var curDesc = state.edges.length === 0 ? 'No paths' : state.edges.map(function(e) {
-      return nodeById(e.from).name + '→' + nodeById(e.to).name + ' (' + e.b.toFixed(2) + ')';
-    }).join(', ');
-
-    var head = '<tr><th></th><th>Structure</th></tr>';
-    tbl.innerHTML = head +
-      '<tr><td style="white-space:nowrap;">Model A (saved “truth”)</td><td style="font-family:inherit;' + (A ? '' : 'color:var(--text-dim);') + '">' + (A ? escXml(A.desc) : 'Nothing saved yet — press “Save current model as Model A”.') + '</td></tr>' +
-      '<tr><td style="white-space:nowrap;">Model B (current drawing)</td><td style="font-family:inherit;">' + escXml(curDesc) + '</td></tr>';
-
-    if (!A) {
-      gofEl.style.display = 'none';
-      verdict.className = 'semb-verdict na';
-      verdict.innerHTML = 'No fit test yet: a lone model trivially reproduces its own implied matrix. Save it as <strong>Model A</strong>, then redraw a rival structure to test.';
-      return;
-    }
-    /* variable set must match */
-    var curIds = state.nodes.map(function(nd) { return nd.id; }).sort();
-    if (curIds.join(',') !== A.ids.slice().sort().join(',')) {
-      state.modelA = null;
-      gofEl.style.display = 'none';
-      verdict.className = 'semb-verdict na';
-      verdict.innerHTML = '<strong>Model A was cleared</strong> — the set of variables changed, so its saved matrix no longer matches. Save a new Model A.';
-      return;
-    }
-    /* same structure? */
-    var curKeys = state.edges.map(function(e) { return e.from + '>' + e.to; }).sort().join(',');
-    if (curKeys === A.edgeKeys) {
-      gofEl.style.display = 'none';
-      verdict.className = 'semb-verdict na';
-      verdict.innerHTML = '<strong>Model B has the same structure as Model A</strong>, so it can reproduce Model A’s matrix exactly (χ² = 0 by construction). Change the paths to test a genuine rival.';
-      return;
-    }
-
-    /* fit B's structure (free parameters) against A's implied matrix */
-    var pos = {};
-    A.ids.forEach(function(id, i) { pos[id] = i; });
-    var idxEdges = state.edges.map(function(e) { return { from: pos[e.from], to: pos[e.to] }; });
-    var p = A.ids.length;
-    var model = buildPathModel(p, idxEdges);
-    var moments = p * (p + 1) / 2;
-    var df = moments - model.q;
-    if (df < 0) {
-      gofEl.style.display = 'none';
-      verdict.className = 'semb-verdict na';
-      verdict.innerHTML = '<strong>Model B has more parameters than moments</strong> (df &lt; 0) — not identified; remove paths.';
-      return;
-    }
-    var ldS = invLogDet(A.S).logDet;
-    var res = minimize(function(t) { return fml(A.S, model.sigma(t), ldS); }, model.theta0, Math.min(2000, 600 + 130 * model.q));
-    var F = Math.max(0, res.f);
-    var chi2 = (state.n - 1) * F;
-    var pval = chi2P(chi2, df);
-
-    gofEl.style.display = '';
-    gofEl.innerHTML =
-      gofItem('χ²', chi2.toFixed(2), 'B fitted to A’s matrix', df === 0 || pval >= 0.05) +
-      gofItem('df', String(df), 'moments − free params', null) +
-      gofItem('p-value', df === 0 ? '—' : fmtP(pval), 'p ≥ .05 = consistent', df === 0 || pval >= 0.05);
-
-    if (df === 0) {
-      verdict.className = 'semb-verdict na';
-      verdict.innerHTML = '<strong>Model B is saturated</strong> (df = 0): with as many free parameters as moments it reproduces <em>any</em> matrix, including Model A’s — the test has no power. Remove a path to make B falsifiable.';
-    } else if (pval >= 0.05) {
-      verdict.className = 'semb-verdict nosig';
-      verdict.innerHTML = '<span class="delta">χ²(' + df + ') = ' + chi2.toFixed(2) + ', p = ' + fmtP(pval) + '</span><br>' +
-        '<strong>Model B’s structure is consistent</strong> with the world Model A describes (at n = ' + state.n + '): its constraints can reproduce Model A’s implied correlations.';
-    } else {
-      verdict.className = 'semb-verdict sig';
-      verdict.innerHTML = '<span class="delta">χ²(' + df + ') = ' + chi2.toFixed(2) + ', p ' + (pval < 0.001 ? '< .001' : '= ' + fmtP(pval)) + '</span><br>' +
-        '<strong>Rejected:</strong> Model B’s structure cannot reproduce the correlations implied by Model A. If A is the truth, a study of n = ' + state.n + ' would be expected to detect B’s misspecification.';
-    }
+    renderChips();
+    renderPathBar();
+    renderDataPanel();
+    updateFitGate();
   }
 
   /* ================= diagram ================= */
@@ -738,19 +678,24 @@ document.addEventListener('DOMContentLoaded', function() {
       (bx - wx).toFixed(1) + ',' + (by - wy).toFixed(1) + '" fill="' + color + '"/>';
   }
 
-  function renderDiagram() {
-    var svg = '<svg id="semb-svg" viewBox="0 0 ' + VW + ' ' + VH + '" xmlns="http://www.w3.org/2000/svg">';
+  function diagramSVG(interactive) {
+    var svg = '<svg' + (interactive ? ' id="semb-svg"' : '') + ' viewBox="0 0 ' + VW + ' ' + VH + '" xmlns="http://www.w3.org/2000/svg">';
     svg += '<rect x="0" y="0" width="' + VW + '" height="' + VH + '" fill="transparent" data-bg="1"/>';
 
     if (state.nodes.length === 0) {
       svg += '<text x="' + (VW / 2) + '" y="' + (VH / 2 - 8) + '" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="16" font-family="sans-serif">The canvas is empty.</text>' +
-        '<text x="' + (VW / 2) + '" y="' + (VH / 2 + 18) + '" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="13" font-family="sans-serif">Click “+ Add Variable”, then draw paths and type causal values on them — correlations are computed for you.</text>';
+        '<text x="' + (VW / 2) + '" y="' + (VH / 2 + 18) + '" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="13" font-family="sans-serif">Click “+ Add Variable”, then click one node and another to draw an arrow.</text>';
     }
+
+    /* coefficients exist only after a fit, and are printed only on the
+       results copy — the drawing canvas never shows numbers */
+    var betas = !interactive && state.fit && !state.stale ? state.fit.betas : null;
 
     state.edges.forEach(function(e, ei) {
       var nf = nodeById(e.from), nt = nodeById(e.to);
       if (!nf || !nt) return;
       var color = nf.color;
+      var b = betas ? betas[e.from + '>' + e.to] : undefined;
       var p1 = nodeBoundary(nf, nt, 2), p2 = nodeBoundary(nt, nf, 4);
       var mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
       var nx = -(p2.y - p1.y), ny = p2.x - p1.x;
@@ -759,14 +704,18 @@ document.addEventListener('DOMContentLoaded', function() {
       var elen = Math.sqrt(edx * edx + edy * edy) || 1;
       svg += '<line x1="' + p1.x + '" y1="' + p1.y + '" x2="' + (p2.x - edx / elen * 9) + '" y2="' + (p2.y - edy / elen * 9) + '" stroke="' + color + '" stroke-width="2"/>';
       svg += arrowHeadAt(p2.x, p2.y, edx, edy, color);
-      svg += '<text x="' + (mx + nx / nl * 13) + '" y="' + (my + ny / nl * 13) + '" text-anchor="middle" fill="' + color + '" font-size="12.5" font-weight="700" font-family="monospace">' + e.b.toFixed(2) + '</text>';
-      svg += '<line class="semb-edge-hit" data-edge="' + ei + '" x1="' + p1.x + '" y1="' + p1.y + '" x2="' + p2.x + '" y2="' + p2.y + '" stroke="rgba(0,0,0,0)" stroke-width="16"><title>Click to edit this path’s value</title></line>';
+      if (b !== undefined) {
+        svg += '<text x="' + (mx + nx / nl * 13) + '" y="' + (my + ny / nl * 13) + '" text-anchor="middle" fill="' + color + '" font-size="12.5" font-weight="700" font-family="monospace">' + b.toFixed(2) + '</text>';
+      }
+      if (interactive) {
+        svg += '<line class="semb-edge-hit" data-edge="' + ei + '" x1="' + p1.x + '" y1="' + p1.y + '" x2="' + p2.x + '" y2="' + p2.y + '" stroke="rgba(0,0,0,0)" stroke-width="16"><title>Click to highlight this path’s chip</title></line>';
+      }
     });
 
     state.nodes.forEach(function(nd) {
-      var sel = state.selected === nd.id;
+      var sel = interactive && state.selected === nd.id;
       var isTarget = state.targetId === nd.id;
-      svg += '<g class="semb-node" data-node="' + nd.id + '">';
+      svg += '<g' + (interactive ? ' class="semb-node" data-node="' + nd.id + '"' : '') + '>';
       if (sel) svg += '<rect x="' + (nd.x - NW / 2 - 5) + '" y="' + (nd.y - NH / 2 - 5) + '" width="' + (NW + 10) + '" height="' + (NH + 10) + '" rx="12" fill="none" stroke="' + nd.color + '" stroke-width="1.5" stroke-dasharray="4,4"/>';
       svg += '<rect x="' + (nd.x - NW / 2) + '" y="' + (nd.y - NH / 2) + '" width="' + NW + '" height="' + NH + '" rx="9" fill="' + (sel ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)') + '" stroke="' + nd.color + '" stroke-width="' + (sel || isTarget ? 3 : 2) + '"/>';
       svg += '<text x="' + nd.x + '" y="' + (nd.y + (isTarget ? -1 : 5)) + '" text-anchor="middle" fill="' + nd.color + '" font-size="14.5" font-weight="700" font-family="sans-serif" pointer-events="none">' + escXml(nd.name) + '</text>';
@@ -777,7 +726,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     svg += '</svg>';
-    document.getElementById('semb-canvas').innerHTML = svg;
+    return svg;
+  }
+
+  function renderDiagram() {
+    document.getElementById('semb-canvas').innerHTML = diagramSVG(true);
 
     var svgEl = document.getElementById('semb-svg');
     var nodes = svgEl.querySelectorAll('[data-node]');
@@ -788,7 +741,7 @@ document.addEventListener('DOMContentLoaded', function() {
     for (var hi = 0; hi < hits.length; hi++) {
       hits[hi].addEventListener('click', function(ev) {
         ev.stopPropagation();
-        focusChipValue(+this.getAttribute('data-edge'));
+        focusChip(+this.getAttribute('data-edge'));
       });
     }
     svgEl.addEventListener('pointerdown', function(ev) {
@@ -798,25 +751,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  function focusChipValue(i) {
-    var inp = document.querySelector('#semb-chips input[data-eval="' + i + '"]');
-    if (inp) {
-      inp.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      inp.focus();
-      inp.select();
+  function focusChip(i) {
+    var chip = document.querySelector('#semb-chips [data-chipwrap="' + i + '"]');
+    if (chip) {
+      chip.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      chip.classList.remove('flash');
+      void chip.offsetWidth;
+      chip.classList.add('flash');
     }
   }
 
   function renderChips() {
     var el = document.getElementById('semb-chips');
     if (state.edges.length === 0) {
-      el.innerHTML = '<span class="none">No paths drawn yet — draw one and type its causal value.</span>';
+      el.innerHTML = '<span class="semb-none">No paths drawn yet.</span>';
       return;
     }
     el.innerHTML = state.edges.map(function(e, i) {
       var nf = nodeById(e.from), nt = nodeById(e.to);
-      return '<span class="semb-chip">' + escXml(nf.name) + ' → ' + escXml(nt.name) +
-        '<input type="number" step="0.05" min="-1.5" max="1.5" value="' + e.b + '" data-eval="' + i + '" aria-label="Causal value ' + escXml(nf.name) + ' to ' + escXml(nt.name) + '">' +
+      return '<span class="semb-chip" data-chipwrap="' + i + '">' + escXml(nf.name) + ' → ' + escXml(nt.name) +
         '<button type="button" class="flip" data-flip="' + i + '" title="Reverse direction" aria-label="Reverse direction">⇄</button>' +
         '<button type="button" data-chip="' + i + '" title="Remove path" aria-label="Remove path">×</button></span>';
     }).join('');
@@ -828,30 +781,6 @@ document.addEventListener('DOMContentLoaded', function() {
     for (var f = 0; f < flips.length; f++) {
       flips[f].addEventListener('click', function() { flipEdge(+this.getAttribute('data-flip')); });
     }
-    var vals = el.querySelectorAll('input[data-eval]');
-    for (var v = 0; v < vals.length; v++) {
-      vals[v].addEventListener('input', function() {
-        var val = parseFloat(this.value);
-        setEdgeValue(+this.getAttribute('data-eval'), isFinite(val) ? val : 0, 'chip');
-      });
-    }
-  }
-
-  /* single source of truth for path-value edits; syncs chip + editor */
-  function setEdgeValue(i, v, source) {
-    var e = state.edges[i];
-    if (!e) return;
-    e.b = v;
-    if (source !== 'chip') {
-      var ci = document.querySelector('#semb-chips input[data-eval="' + i + '"]');
-      if (ci) ci.value = v;
-    }
-    if (source !== 'editor') {
-      var eiInp = document.querySelector('#semb-editor input[data-edval="' + i + '"]');
-      if (eiInp) eiInp.value = v;
-    }
-    renderDiagram();
-    scheduleRecompute();
   }
 
   function renderPathBar() {
@@ -869,14 +798,196 @@ document.addEventListener('DOMContentLoaded', function() {
     var off = state.nodes.length < 2;
     fromSel.disabled = off;
     toSel.disabled = off;
-    document.getElementById('semb-path-val').disabled = off;
     document.getElementById('semb-path-add').disabled = off;
   }
 
-  function renderAll() {
-    renderDiagram();
-    renderChips();
-    renderPathBar();
+  /* ================= data panel ================= */
+
+  function renderDataPanel(errMsg) {
+    var el = document.getElementById('semb-data-panel');
+    var html = '';
+    if (errMsg) html += '<div class="semb-data-issues" style="margin:0 0 10px;">' + escXml(errMsg) + '</div>';
+    if (!state.data) {
+      el.innerHTML = html + '<span class="semb-none">No data loaded yet.</span>';
+      return;
+    }
+    var d = state.data;
+    html += '<div class="semb-data-meta">' +
+      '<span>Dataset: <strong>' + escXml(d.name) + '</strong></span>' +
+      '<span>N = <strong>' + d.n + '</strong> rows (read from the data)</span>' +
+      '<span><strong>' + d.headers.length + '</strong> columns</span></div>';
+    html += '<div class="semb-cols">' + d.headers.map(function(h, i) {
+      var k = d.keys[i];
+      var usable = d.finite[k] >= 3;
+      var matched = state.nodes.some(function(nd) { return colKey(nd.name) === k; });
+      if (!usable) return '<span class="semb-col-chip bad" title="Fewer than 3 numeric values — can’t be modeled">' + escXml(h) + ' — not numeric</span>';
+      if (matched) return '<span class="semb-col-chip ok" title="Matched to a variable on the canvas">✓ ' + escXml(h) + '</span>';
+      return '<span class="semb-col-chip">' + escXml(h) +
+        '<button type="button" data-addcol="' + i + '" title="Add as a variable on the canvas" aria-label="Add ' + escXml(h) + ' to the canvas">+</button></span>';
+    }).join('') + '</div>';
+    var v = validateMatch();
+    if (v.unmatched.length) {
+      html += '<div class="semb-data-issues">No data column for: ' + v.unmatched.map(escXml).join(', ') + ' — rename the variable(s) to match a column (case-insensitive), or upload data containing them.</div>';
+    }
+    if (v.dup.length) {
+      html += '<div class="semb-data-issues">Two canvas variables share the name “' + escXml(v.dup[0]) + '” — rename one.</div>';
+    }
+    el.innerHTML = html;
+    var adds = el.querySelectorAll('[data-addcol]');
+    for (var ai = 0; ai < adds.length; ai++) {
+      adds[ai].addEventListener('click', function() {
+        addNode(state.data.headers[+this.getAttribute('data-addcol')]);
+      });
+    }
+  }
+
+  /* ================= fit ================= */
+
+  function runFit() {
+    var d = state.data;
+    var ids = state.nodes.map(function(nd) { return nd.id; });
+    var keys = state.nodes.map(function(nd) { return colKey(nd.name); });
+    var p = ids.length;
+
+    /* listwise deletion over the modeled columns */
+    var use = [];
+    for (var r = 0; r < d.n; r++) {
+      var ok = true;
+      for (var c = 0; c < p; c++) if (!isFinite(d.cols[keys[c]][r])) { ok = false; break; }
+      if (ok) use.push(r);
+    }
+    var nUsed = use.length;
+    if (nUsed < 10 || nUsed <= p + 1) {
+      setFitStatus('Only ' + nUsed + ' complete rows across the modeled columns — not enough to fit.', 'err');
+      return;
+    }
+    var X = keys.map(function(k) { return use.map(function(ri) { return d.cols[k][ri]; }); });
+    var mom = covCorr(X);
+    for (var si = 0; si < p; si++) {
+      if (!(mom.sd[si] > 1e-9)) {
+        setFitStatus('Column “' + state.nodes[si].name + '” is constant — it has no variance to model.', 'err');
+        return;
+      }
+    }
+    var pos = {};
+    ids.forEach(function(id, i) { pos[id] = i; });
+    var idxEdges = state.edges.map(function(e) { return { from: pos[e.from], to: pos[e.to] }; });
+    var fit = fitPathModel(mom.R, idxEdges);
+    if (fit.error) {
+      setFitStatus(fit.error === 'collinear'
+        ? 'The parents of “' + state.nodes[fit.node].name + '” are collinear in this data — the regression is not identified. Remove an arrow.'
+        : 'The data matrix is singular — check for duplicated columns.', 'err');
+      return;
+    }
+    var chi2 = (nUsed - 1) * fit.F;
+    var pval = chi2P(chi2, fit.df);
+    var betas = {};
+    state.edges.forEach(function(e) { betas[e.from + '>' + e.to] = fit.B[pos[e.to]][pos[e.from]]; });
+
+    state.fit = {
+      ids: ids, betas: betas, B: fit.B, Psi: fit.Psi, total: fit.total,
+      S: mom.S, R: mom.R, sd: mom.sd,
+      chi2: chi2, df: fit.df, p: pval, q: fit.q, nUsed: nUsed, dropped: d.n - nUsed,
+      endo: fit.endo
+    };
+    state.stale = false;
+    renderResults();
+    syncAll();
+    setFitStatus('Fitted by maximum likelihood: ' + state.edges.length + (state.edges.length === 1 ? ' path' : ' paths') + ' estimated from N = ' + nUsed + ' rows.', 'ok');
+  }
+
+  /* ================= results ================= */
+
+  function gofItem(name, val, rule, good) {
+    var cls = good === null ? '' : (good ? ' good' : ' bad');
+    return '<div class="sem-gof-item' + cls + '"><strong>' + name + '</strong><span class="gof-val">' + val + '</span><span class="gof-rule">' + rule + '</span></div>';
+  }
+
+  function matrixTable(M, fmt, markNoArrow) {
+    var directPair = null;
+    if (markNoArrow) {
+      directPair = {};
+      state.edges.forEach(function(e) {
+        directPair[e.from + '|' + e.to] = true;
+        directPair[e.to + '|' + e.from] = true;
+      });
+    }
+    var html = '<table class="semb-grid"><tr><th></th>';
+    state.nodes.forEach(function(nd) { html += '<th title="' + escXml(nd.name) + '">' + escXml(nd.name) + '</th>'; });
+    html += '</tr>';
+    state.nodes.forEach(function(ri, i) {
+      html += '<tr><th title="' + escXml(ri.name) + '">' + escXml(ri.name) + '</th>';
+      state.nodes.forEach(function(ci, j) {
+        if (i === j) { html += '<td class="diag">' + fmt(M[i][j]) + '</td>'; return; }
+        var noArrow = directPair && !directPair[ri.id + '|' + ci.id] && Math.abs(M[i][j]) > 0.005;
+        html += '<td' + (noArrow ? ' class="induced" title="No direct arrow in your model — if the model fits, this correlation flows through chains and shared causes"' : '') + '>' + fmt(M[i][j]) + '</td>';
+      });
+      html += '</tr>';
+    });
+    return html + '</table>';
+  }
+
+  function renderResults() {
+    var f = state.fit;
+    var box = document.getElementById('semb-results');
+    if (!f || state.stale) { box.style.display = 'none'; return; }
+    box.style.display = '';
+
+    document.getElementById('semb-fitted').innerHTML = diagramSVG(false);
+
+    document.getElementById('semb-smatrix').innerHTML = matrixTable(f.S, fmtCov, false);
+    document.getElementById('semb-rmatrix').innerHTML = matrixTable(f.R, function(v) { return v.toFixed(2); }, true);
+
+    /* causal effects */
+    var pos = {};
+    f.ids.forEach(function(id, i) { pos[id] = i; });
+    var eh = '';
+    if (state.targetId && pos[state.targetId] !== undefined) {
+      var t = pos[state.targetId];
+      var tgt = nodeById(state.targetId);
+      eh += '<div class="sem-table-wrap"><table class="sem-table"><tr><th>Effect on target “' + escXml(tgt.name) + '”</th><th>Direct β</th><th>Total (direct + indirect)</th><th>Observed correlation</th></tr>';
+      f.ids.forEach(function(id, ix) {
+        if (ix === t) return;
+        eh += '<tr><td>' + escXml(nodeById(id).name) + '</td><td>' + f.B[t][ix].toFixed(3) + '</td><td class="accent-cell">' + f.total[t][ix].toFixed(3) + '</td><td>' + f.R[t][ix].toFixed(3) + '</td></tr>';
+      });
+      if (f.endo.indexOf(t) >= 0) {
+        eh += '<tr><td>R² of the target (variance explained by its causes)</td><td colspan="3" class="accent-cell">' + (1 - f.Psi[t][t]).toFixed(3) + '</td></tr>';
+      }
+      eh += '</table></div>';
+      eh += '<p style="font-size:12px;color:var(--text-dim);margin:2px 0 0;">Where the total effect is near 0 but the observed correlation is not, the association is spurious — confounding, not causation. Total effects are in SD units: a 1 SD intervention on the row variable moves the target by that many SDs.</p>';
+    } else {
+      eh += '<p class="semb-none" style="margin:4px 0;">No target designated. Double-click a variable and tick <em>Is Target</em> to get every variable’s total causal effect on it.</p>';
+    }
+    if (f.endo.length > 0) {
+      eh += '<div class="sem-table-wrap"><table class="sem-table"><tr><th>Endogenous variable</th><th>R² (variance explained)</th><th>Residual variance</th></tr>';
+      f.endo.forEach(function(ix) {
+        eh += '<tr><td>' + escXml(nodeById(f.ids[ix]).name) + '</td><td class="accent-cell">' + (1 - f.Psi[ix][ix]).toFixed(3) + '</td><td>' + f.Psi[ix][ix].toFixed(3) + '</td></tr>';
+      });
+      eh += '</table></div>';
+    }
+    document.getElementById('semb-effects').innerHTML = eh;
+
+    /* goodness of fit */
+    var saturated = f.df === 0;
+    document.getElementById('semb-gof').innerHTML =
+      gofItem('χ²', f.chi2.toFixed(2), 'model vs. data', saturated || f.p >= 0.05) +
+      gofItem('df', String(f.df), 'moments − free params', null) +
+      gofItem('p-value', saturated ? '—' : fmtP(f.p), 'p ≥ .05 = consistent', saturated || f.p >= 0.05) +
+      gofItem('N', String(f.nUsed), f.dropped > 0 ? f.dropped + ' incomplete row' + (f.dropped === 1 ? '' : 's') + ' dropped' : 'rows, read from the data', null);
+
+    var verdict = document.getElementById('semb-verdict');
+    if (saturated) {
+      verdict.className = 'semb-verdict na';
+      verdict.innerHTML = '<strong>The model is saturated</strong> (df = 0): it has as many free parameters as the data has distinct moments, so it reproduces S exactly and the test has no power. Remove an arrow to make the model falsifiable.';
+    } else if (f.p >= 0.05) {
+      verdict.className = 'semb-verdict nosig';
+      verdict.innerHTML = '<span class="delta">χ²(' + f.df + ') = ' + f.chi2.toFixed(2) + ', p = ' + fmtP(f.p) + '</span><br>' +
+        '<strong>Consistent:</strong> at N = ' + f.nUsed + ', the constraints your DAG imposes (its missing arrows) reproduce the observed covariances within sampling error.';
+    } else {
+      verdict.className = 'semb-verdict sig';
+      verdict.innerHTML = '<span class="delta">χ²(' + f.df + ') = ' + f.chi2.toFixed(2) + ', p ' + (f.p < 0.001 ? '< .001' : '= ' + fmtP(f.p)) + '</span><br>' +
+        '<strong>Rejected:</strong> your structure cannot reproduce the covariances actually observed in these N = ' + f.nUsed + ' rows. Some missing arrow (or arrow direction) contradicts the data.';
+    }
   }
 
   /* ================= variable editor ================= */
@@ -902,24 +1013,22 @@ document.addEventListener('DOMContentLoaded', function() {
     state.edges.forEach(function(e, i) { if (e.from === nd.id) outEdges[e.to] = i; });
 
     var html = '<div class="ed-top">' +
-      '<div class="fld"><label class="fl">Name</label><input type="text" id="semb-ed-name" value="' + escXml(nd.name).replace(/"/g, '&quot;') + '" maxlength="24"></div>' +
+      '<div class="fld"><label class="fl">Name (must match a data column)</label><input type="text" id="semb-ed-name" value="' + escXml(nd.name).replace(/"/g, '&quot;') + '" maxlength="24"></div>' +
       '<label class="ed-row" style="align-self:center;"><input type="checkbox" id="semb-ed-target"' + (state.targetId === nd.id ? ' checked' : '') + '> <span><strong style="color:var(--accent);">Is Target</strong> — the outcome we measure</span></label>' +
       '<span style="flex:1;"></span>' +
       '<button class="ebtn danger" id="semb-ed-del" type="button">Delete variable</button>' +
       '<button class="ebtn" id="semb-ed-done" type="button">Done</button>' +
       '</div>';
 
-    html += '<div class="ed-section"><label class="fl">Where it points to &mdash; and each path&rsquo;s causal value</label>';
+    html += '<div class="ed-section"><label class="fl">Where it points to</label>';
     if (others.length === 0) {
       html += '<p class="ed-note">No other variables yet — add another variable first.</p>';
     } else {
       html += '<div class="ed-rows">' + others.map(function(o) {
         var has = outEdges[o.id] !== undefined;
-        var b = has ? state.edges[outEdges[o.id]].b : 0.5;
-        return '<span class="ed-row"><label class="ed-row" style="gap:6px;"><input type="checkbox" data-edpoint="' + o.id + '"' + (has ? ' checked' : '') + '> → ' + escXml(o.name) + '</label>' +
-          '<input type="number" step="0.05" min="-1.5" max="1.5" value="' + b + '"' + (has ? ' data-edval="' + outEdges[o.id] + '"' : ' disabled') + ' aria-label="Causal value to ' + escXml(o.name) + '"></span>';
+        return '<label class="ed-row" style="gap:6px;"><input type="checkbox" data-edpoint="' + o.id + '"' + (has ? ' checked' : '') + '> → ' + escXml(o.name) + '</label>';
       }).join('') + '</div>';
-      html += '<p class="ed-note">Tick a variable to draw the path, then set its causal coefficient. The implied correlations update instantly.</p>';
+      html += '<p class="ed-note">Tick a variable to draw the arrow.</p>';
     }
     html += '</div>';
 
@@ -928,17 +1037,15 @@ document.addEventListener('DOMContentLoaded', function() {
     var nameInput = document.getElementById('semb-ed-name');
     nameInput.addEventListener('input', function(e) {
       nd.name = e.target.value || 'unnamed';
-      renderDiagram();
-      renderChips();
-      renderPathBar();
-      scheduleRecompute();
+      clearFit();
+      syncAll();
     });
     document.getElementById('semb-ed-del').addEventListener('click', function() { deleteNode(nd.id); });
     document.getElementById('semb-ed-done').addEventListener('click', closeEditor);
     document.getElementById('semb-ed-target').addEventListener('change', function(e) {
       state.targetId = e.target.checked ? nd.id : null;
       renderDiagram();
-      scheduleRecompute();
+      renderResults(); /* target choice only changes which effects are shown */
     });
 
     var pointChecks = panel.querySelectorAll('input[data-edpoint]');
@@ -946,7 +1053,7 @@ document.addEventListener('DOMContentLoaded', function() {
       pointChecks[pi].addEventListener('change', function(e) {
         var toId = this.getAttribute('data-edpoint');
         if (e.target.checked) {
-          var ok = addDirectedPath(nd.id, toId, 0.5, true);
+          var ok = addDirectedPath(nd.id, toId, true);
           if (!ok) { e.target.checked = false; return; }
           renderEditor();
         } else {
@@ -956,15 +1063,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
     }
-    var valInputs = panel.querySelectorAll('input[data-edval]');
-    for (var vi = 0; vi < valInputs.length; vi++) {
-      valInputs[vi].addEventListener('input', function() {
-        var v = parseFloat(this.value);
-        setEdgeValue(+this.getAttribute('data-edval'), isFinite(v) ? v : 0, 'editor');
-      });
-    }
 
     if (focusName) { nameInput.focus(); nameInput.select(); }
+  }
+
+  function addNode(name) {
+    var slot = SLOTS[state.nodes.length % SLOTS.length];
+    var jitter = Math.floor(state.nodes.length / SLOTS.length) * 22;
+    var id = 'n' + (++state.nodeCounter);
+    state.nodes.push({
+      id: id,
+      name: name,
+      x: Math.min(VW - NW / 2 - 10, slot.x + jitter),
+      y: Math.min(VH - NH / 2 - 14, slot.y + jitter),
+      color: PALETTE[(state.nodeCounter - 1) % PALETTE.length]
+    });
+    clearFit();
+    syncAll();
+    drawStatus();
+    return id;
   }
 
   function deleteNode(id) {
@@ -973,8 +1090,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (state.selected === id) state.selected = null;
     if (state.targetId === id) state.targetId = null;
     if (state.editing === id) closeEditor();
-    scheduleRecompute();
-    renderAll();
+    clearFit();
+    syncAll();
+    drawStatus();
   }
 
   /* ================= canvas interactions ================= */
@@ -1014,6 +1132,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.removeEventListener('pointermove', onWinPointerMove);
     window.removeEventListener('pointerup', onWinPointerUp);
     if (wasClick) handleNodeClick(id);
+    else if (state.fit && !state.stale) document.getElementById('semb-fitted').innerHTML = diagramSVG(false);
   }
 
   function handleNodeClick(id) {
@@ -1029,7 +1148,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (state.selected === null) {
       state.selected = id;
-      setStatus('Selected “' + nodeById(id).name + '” — click another variable to draw a path, or double-click to edit.', '');
+      setStatus('Selected “' + nodeById(id).name + '” — click another variable to draw an arrow, or double-click to edit.', '');
       renderDiagram();
       return;
     }
@@ -1045,18 +1164,16 @@ document.addEventListener('DOMContentLoaded', function() {
       if (e.from === from && e.to === to) sameIdx = i;
     });
     if (sameIdx >= 0) {
-      focusChipValue(sameIdx);
+      focusChip(sameIdx);
       renderDiagram();
       return;
     }
-    if (addDirectedPath(from, to, 0.5)) {
-      focusChipValue(state.edges.length - 1);
-    }
+    addDirectedPath(from, to);
   }
 
   /* Shared by canvas gesture, From→To bar, and editor checkboxes.
      Structural validation: DAG cycle check only. */
-  function addDirectedPath(from, to, b, quiet) {
+  function addDirectedPath(from, to, quiet) {
     if (from === to) {
       setStatus('Pick two different variables for a path.', 'err');
       return false;
@@ -1067,27 +1184,22 @@ document.addEventListener('DOMContentLoaded', function() {
       if (e.from === to && e.to === from) revIdx = i;
     });
     if (sameIdx >= 0) {
-      setStatus('That path is already drawn: ' + nodeById(from).name + ' → ' + nodeById(to).name + ' — edit its value on its chip.', 'warn');
+      setStatus('That path is already drawn: ' + nodeById(from).name + ' → ' + nodeById(to).name + '.', 'warn');
       return true;
     }
     var candidate = state.edges.slice();
-    var carried = b;
-    if (revIdx >= 0) {
-      carried = (typeof b === 'number' && isFinite(b)) ? b : state.edges[revIdx].b;
-      candidate.splice(revIdx, 1);
-    }
-    candidate.push({ from: from, to: to, b: (typeof carried === 'number' && isFinite(carried)) ? carried : 0.5 });
+    if (revIdx >= 0) candidate.splice(revIdx, 1);
+    candidate.push({ from: from, to: to });
     if (!topoOK(state.nodes, candidate)) {
       setStatus('That path would create a cycle — structural models must be a recursive DAG.', 'err');
       renderDiagram();
       return false;
     }
     state.edges = candidate;
-    setStatus((revIdx >= 0 ? 'Reversed the existing path: now ' : 'Added path ') + nodeById(from).name + ' → ' + nodeById(to).name + ' — type its causal value on its chip.', 'ok');
-    scheduleRecompute();
-    renderDiagram();
-    renderChips();
+    clearFit();
+    syncAll();
     if (!quiet) renderEditorIfOpen();
+    setStatus((revIdx >= 0 ? 'Reversed the existing path: now ' : 'Added path ') + nodeById(from).name + ' → ' + nodeById(to).name + '.', 'ok');
     return true;
   }
 
@@ -1095,91 +1207,78 @@ document.addEventListener('DOMContentLoaded', function() {
     var e = state.edges[i];
     if (!e) return;
     var candidate = state.edges.map(function(ee, j) {
-      return j === i ? { from: e.to, to: e.from, b: e.b } : ee;
+      return j === i ? { from: e.to, to: e.from } : ee;
     });
     if (!topoOK(state.nodes, candidate)) {
       setStatus('Reversing ' + nodeById(e.from).name + ' → ' + nodeById(e.to).name + ' would create a cycle.', 'err');
       return;
     }
     state.edges = candidate;
-    setStatus('Reversed direction: now ' + nodeById(e.to).name + ' → ' + nodeById(e.from).name + '.', 'ok');
-    scheduleRecompute();
-    renderDiagram();
-    renderChips();
+    clearFit();
+    syncAll();
     renderEditorIfOpen();
+    setStatus('Reversed direction: now ' + nodeById(e.to).name + ' → ' + nodeById(e.from).name + '.', 'ok');
   }
 
   function removeEdge(i) {
     if (!state.edges[i]) return;
     state.edges.splice(i, 1);
-    scheduleRecompute();
-    renderDiagram();
-    renderChips();
+    clearFit();
+    syncAll();
     renderEditorIfOpen();
+    drawStatus();
   }
 
-  /* ================= toolbar ================= */
+  /* ================= toolbar + data loading ================= */
 
   document.getElementById('semb-add').addEventListener('click', function() {
-    var slot = SLOTS[state.nodes.length % SLOTS.length];
-    var jitter = Math.floor(state.nodes.length / SLOTS.length) * 22;
-    var id = 'n' + (++state.nodeCounter);
-    var name = NAMES[(state.nodeCounter - 1) % NAMES.length];
-    if (state.nodeCounter > NAMES.length) name += Math.ceil(state.nodeCounter / NAMES.length);
-    state.nodes.push({
-      id: id,
-      name: name,
-      x: Math.min(VW - NW / 2 - 10, slot.x + jitter),
-      y: Math.min(VH - NH / 2 - 14, slot.y + jitter),
-      color: PALETTE[(state.nodeCounter - 1) % PALETTE.length]
-    });
+    var name = NAMES[(state.nodeCounter) % NAMES.length];
+    if (state.nodeCounter + 1 > NAMES.length) name += Math.ceil((state.nodeCounter + 1) / NAMES.length);
+    var id = addNode(name);
     openEditor(id, true);
-    scheduleRecompute();
-    renderAll();
   });
 
   document.getElementById('semb-path-add').addEventListener('click', function() {
     var from = document.getElementById('semb-path-from').value;
     var to = document.getElementById('semb-path-to').value;
-    var v = parseFloat(document.getElementById('semb-path-val').value);
     if (!from || !to) return;
-    addDirectedPath(from, to, isFinite(v) ? v : 0.5);
+    addDirectedPath(from, to);
   });
 
-  document.getElementById('semb-n').addEventListener('input', function(e) {
-    var v = parseInt(e.target.value, 10);
-    if (isFinite(v) && v >= 10) {
-      state.n = v;
-      scheduleRecompute();
-    }
+  document.getElementById('semb-upload-btn').addEventListener('click', function() {
+    document.getElementById('semb-file').click();
   });
 
-  document.getElementById('semb-save-a').addEventListener('click', function() {
-    if (state.nodes.length < 2) {
-      setStatus('Draw a model first (at least two variables).', 'err');
-      return;
-    }
-    var ids = state.nodes.map(function(nd) { return nd.id; });
-    var out = impliedCorr(ids, state.edges);
-    if (out.error) {
-      setStatus('Fix the current model before saving it (its implied matrix is invalid).', 'err');
-      return;
-    }
-    state.modelA = {
-      ids: ids.slice(),
-      edgeKeys: state.edges.map(function(e) { return e.from + '>' + e.to; }).sort().join(','),
-      desc: state.edges.length === 0 ? 'No paths' : state.edges.map(function(e) {
-        return nodeById(e.from).name + '→' + nodeById(e.to).name + ' (' + e.b.toFixed(2) + ')';
-      }).join(', '),
-      S: out.Phi.map(function(r) { return r.slice(); })
+  document.getElementById('semb-file').addEventListener('change', function(e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      var parsed = parseCSV(reader.result, file.name);
+      if (parsed.error) {
+        renderDataPanel('Could not load “' + file.name + '”: ' + parsed.error);
+        return;
+      }
+      state.data = parsed;
+      clearFit();
+      syncAll();
     };
-    setStatus('Saved as Model A — its implied matrix is now the “data”. Redraw the structure to test a rival Model B.', 'ok');
-    renderComparison(); /* saving changes nothing else — keep the confirmation visible */
+    reader.onerror = function() { renderDataPanel('Could not read the file.'); };
+    reader.readAsText(file);
+    e.target.value = '';
   });
+
+  document.getElementById('semb-default-btn').addEventListener('click', function() {
+    state.data = defaultDataset();
+    clearFit();
+    syncAll();
+  });
+
+  document.getElementById('semb-fit').addEventListener('click', runFit);
 
   /* ================= boot ================= */
-  renderAll();
-  scheduleRecompute();
+  syncAll();
+  drawStatus();
 });
 </script>
 
