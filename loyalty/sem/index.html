@@ -6,7 +6,7 @@
 <title>Loyalty &mdash; SEM Analysis</title>
 <link rel="stylesheet" href="../../style.css">
 <style>
-  /* SEM/DAG workbench page-specific styles */
+  /* SEM workbench page-specific styles */
   .sem-diagram-wrap { position: relative; background: rgba(255,255,255,0.02); border: 1px solid var(--border-soft); border-radius: 10px; padding: 10px; margin: 14px 0 8px; overflow-x: auto; }
   .sem-diagram-wrap svg { display: block; width: 100%; height: auto; min-width: 620px; touch-action: none; }
   .semb-node { cursor: pointer; }
@@ -24,15 +24,16 @@
 
   .semb-editor {
     background: var(--surface); border: 1px solid var(--accent); border-radius: 10px;
-    padding: 14px 16px; margin: 0 0 14px; display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+    padding: 16px 18px; margin: 0 0 14px;
   }
+  .semb-editor .ed-top { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
   .semb-editor .fld { display: flex; flex-direction: column; gap: 4px; }
-  .semb-editor label { font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  .semb-editor label.fl { font-size: 11.5px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.4px; }
   .semb-editor input[type=text] {
     background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 6px;
     color: var(--text); font-family: inherit; font-size: 14px; padding: 8px 10px; min-width: 170px;
   }
-  .semb-editor input:focus { outline: none; border-color: var(--accent); }
+  .semb-editor input[type=text]:focus { outline: none; border-color: var(--accent); }
   .semb-editor .ebtn {
     font-family: inherit; font-size: 13px; font-weight: 600; border-radius: 9999px;
     padding: 8px 16px; cursor: pointer; border: 1px solid var(--border);
@@ -41,13 +42,31 @@
   .semb-editor .ebtn:hover { border-color: var(--text); color: var(--text); }
   .semb-editor .ebtn.danger { border-color: rgba(248,113,113,0.4); color: #f87171; }
   .semb-editor .ebtn.danger:hover { background: rgba(248,113,113,0.1); }
+  .semb-editor .ed-section { margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  .semb-editor .ed-rows { display: flex; gap: 8px 20px; flex-wrap: wrap; margin-top: 6px; }
+  .semb-editor .ed-row { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
+  .semb-editor .ed-row input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
+  .semb-editor .ed-row input[type=number] {
+    width: 64px; text-align: center; background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border); border-radius: 5px; color: var(--accent);
+    font-family: "SF Mono","Fira Code",Consolas,monospace; font-size: 13px; font-weight: 700; padding: 5px 4px;
+  }
+  .semb-editor .ed-row input[type=number]:disabled { opacity: 0.3; }
+  .semb-editor .ed-row input[type=number]:focus { outline: none; border-color: var(--accent); }
+  .semb-editor .ed-note { font-size: 12px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; }
 
   .semb-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; }
   .semb-chip {
-    display: inline-flex; align-items: center; gap: 8px;
+    display: inline-flex; align-items: center; gap: 7px;
     background: var(--surface); border: 1px solid var(--border-soft); border-radius: 9999px;
     padding: 5px 6px 5px 12px; font-size: 12.5px; color: var(--text); font-weight: 600;
   }
+  .semb-chip input {
+    width: 58px; text-align: center; background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border); border-radius: 5px; color: var(--accent);
+    font-family: "SF Mono","Fira Code",Consolas,monospace; font-size: 12.5px; font-weight: 700; padding: 3px 2px;
+  }
+  .semb-chip input:focus { outline: none; border-color: var(--accent); }
   .semb-chip button {
     background: rgba(255,255,255,0.08); border: none; color: var(--text-muted);
     width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 12px;
@@ -66,25 +85,26 @@
   .semb-pathbar .pb-arrow { color: var(--accent); font-weight: 700; font-size: 16px; }
   .semb-pathbar select {
     background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 6px;
-    color: var(--text); font-family: inherit; font-size: 13px; padding: 7px 10px; min-width: 120px;
+    color: var(--text); font-family: inherit; font-size: 13px; padding: 7px 10px; min-width: 110px;
   }
   .semb-pathbar select:focus { outline: none; border-color: var(--accent); }
-  .semb-pathbar select:disabled, .semb-pathbar button:disabled { opacity: 0.4; }
-
-  /* correlation grid */
-  .semb-grid { border-collapse: collapse; font-size: 13px; }
-  .semb-grid th, .semb-grid td { padding: 6px 8px; text-align: center; border: 1px solid var(--border-soft); }
-  .semb-grid th { color: var(--text-muted); font-weight: 700; font-size: 12px; background: rgba(255,255,255,0.04); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .semb-grid td.diag { color: var(--text-dim); font-family: "SF Mono","Fira Code",Consolas,monospace; background: rgba(255,255,255,0.03); }
-  .semb-grid td.mirror { color: var(--text-dim); font-family: "SF Mono","Fira Code",Consolas,monospace; }
-  .semb-grid input {
-    width: 62px; text-align: center; background: rgba(0,0,0,0.25);
+  .semb-pathbar input {
+    width: 70px; text-align: center; background: rgba(0,0,0,0.25);
     border: 1px solid var(--border); border-radius: 5px; color: var(--accent);
-    font-family: "SF Mono","Fira Code",Consolas,monospace; font-size: 13px; font-weight: 700; padding: 5px 4px;
+    font-family: "SF Mono","Fira Code",Consolas,monospace; font-size: 13px; font-weight: 700; padding: 6px 4px;
   }
-  .semb-grid input:focus { outline: none; border-color: var(--accent); }
+  .semb-pathbar input:focus { outline: none; border-color: var(--accent); }
+  .semb-pathbar select:disabled, .semb-pathbar button:disabled, .semb-pathbar input:disabled { opacity: 0.4; }
 
-  .semb-n-wrap { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-muted); font-weight: 600; margin: 10px 0 0; }
+  /* implied correlation matrix (read-only output) */
+  .semb-grid { border-collapse: collapse; font-size: 13px; }
+  .semb-grid th, .semb-grid td { padding: 7px 12px; text-align: center; border: 1px solid var(--border-soft); }
+  .semb-grid th { color: var(--text-muted); font-weight: 700; font-size: 12px; background: rgba(255,255,255,0.04); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .semb-grid td { color: var(--text); font-family: "SF Mono","Fira Code",Consolas,monospace; }
+  .semb-grid td.diag { color: var(--text-dim); background: rgba(255,255,255,0.03); }
+  .semb-grid td.induced { color: #fbbf24; font-style: italic; }
+
+  .semb-n-wrap { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-muted); font-weight: 600; margin: 6px 0 0; }
   .semb-n-wrap input {
     width: 90px; text-align: center; background: rgba(0,0,0,0.25);
     border: 1px solid var(--border); border-radius: 5px; color: var(--accent);
@@ -92,7 +112,6 @@
   }
   .semb-n-wrap input:focus { outline: none; border-color: var(--accent); }
 
-  /* Fixed-height status line: content changes never shift the layout */
   .semb-status {
     min-height: 22px; margin: 10px 0 4px; font-size: 13px; font-weight: 600;
     color: var(--text-dim); display: flex; align-items: center;
@@ -110,12 +129,11 @@
   .sem-gof-item.bad .gof-val { color: #f87171; }
 
   .sem-table-wrap { overflow-x: auto; margin: 12px 0; }
-  .sem-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 460px; }
+  .sem-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 420px; }
   .sem-table th { padding: 8px 10px; text-align: left; font-size: 12px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); }
   .sem-table td { padding: 7px 10px; border-bottom: 1px solid var(--border-soft); color: var(--text); font-family: "SF Mono","Fira Code",Consolas,monospace; }
   .sem-table td:first-child { font-family: inherit; }
   .sem-table td.accent-cell { color: var(--accent); font-weight: 600; }
-  .sem-table td.section-cell { font-weight: 700; color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; padding-top: 14px; }
 
   .semb-h3 { font-size: 15px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.4px; margin: 20px 0 4px; }
 
@@ -126,8 +144,8 @@
   }
   .semb-verdict strong { color: var(--text); }
   .semb-verdict .delta { font-family: "SF Mono","Fira Code",Consolas,monospace; color: var(--accent); font-weight: 700; }
-  .semb-verdict.sig { border-left-color: #4ade80; }
-  .semb-verdict.nosig { border-left-color: #fbbf24; }
+  .semb-verdict.sig { border-left-color: #f87171; }
+  .semb-verdict.nosig { border-left-color: #4ade80; }
   .semb-verdict.na { border-left-color: rgba(255,255,255,0.25); }
 </style>
 </head>
@@ -146,42 +164,6 @@
   <div class="content-card">
     <h2>Structural Equation Modeling (SEM)</h2>
     <p>SEM distinguishes between what you can observe (manifest variables) and what you can&rsquo;t directly measure (latent variables) like true loyalty or satisfaction.</p>
-  </div>
-
-  <div class="diagram-container">
-    <h4 class="diagram-title">Manifest vs. Latent Variables</h4>
-    <div class="flow-diagram" style="flex-wrap: wrap; gap: 20px;">
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <div class="flow-step">
-          <div class="step-num">MANIFEST</div>
-          <div class="step-label">Visit Frequency</div>
-        </div>
-        <div class="flow-step">
-          <div class="step-num">MANIFEST</div>
-          <div class="step-label">Points Accumulated</div>
-        </div>
-        <div class="flow-step">
-          <div class="step-num">MANIFEST</div>
-          <div class="step-label">Order Value</div>
-        </div>
-      </div>
-      <span class="flow-arrow">&rarr;</span>
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <div class="flow-step" style="border-color: #a78bfa;">
-          <div class="step-num" style="color: #a78bfa;">LATENT</div>
-          <div class="step-label">Emotional Loyalty</div>
-        </div>
-        <div class="flow-step" style="border-color: #fbbf24;">
-          <div class="step-num" style="color: #fbbf24;">LATENT</div>
-          <div class="step-label">Transactional Loyalty</div>
-        </div>
-      </div>
-      <span class="flow-arrow">&rarr;</span>
-      <div class="flow-step" style="border-color: var(--accent);">
-        <div class="step-num" style="color: var(--accent);">OUTCOME</div>
-        <div class="step-label">Behavioral Outcomes</div>
-      </div>
-    </div>
   </div>
 
   <div class="accordion">
@@ -204,68 +186,65 @@
     </div>
   </div>
 
-  <!-- Self-contained SEM / DAG workbench -->
+  <!-- Causal path workbench: draw coefficients, correlations are computed -->
   <div class="tool-section">
-    <h2>SEM / DAG Workbench &mdash; Entirely In The Browser</h2>
-    <p class="tool-desc">A self-contained path-model builder: no files, no uploads. <strong>(1)&nbsp;Create variables:</strong> click &ldquo;+ Add Variable&rdquo; and name your nodes (A, B, C&hellip; or anything you like). <strong>(2)&nbsp;Type your observed correlations</strong> into the grid that appears &mdash; that grid <em>is</em> the sample matrix <strong>S</strong>. <strong>(3)&nbsp;Draw the causal structure:</strong> click one node, then another, to add a directed path; cycles are rejected so the graph stays a recursive DAG and the drawn arrows form the structural matrix <strong>B</strong>. The engine then fits your DAG to your typed correlations by maximum likelihood &mdash; live, on every change &mdash; annotating each arrow with its estimated path coefficient and reporting &chi;&sup2;, df, and the p-value of your structure against your data.</p>
+    <h2>Causal Path Workbench &mdash; Draw Causes, Read Off Correlations</h2>
+    <p class="tool-desc">You never type a correlation here. <strong>(1)&nbsp;Draw the causal model:</strong> create variables, draw directed paths, and type the causal coefficient directly on each path. <strong>(2)&nbsp;The engine computes the implied correlation matrix</strong> from your drawing via the RAM formulation &Sigma; = (I&nbsp;&minus;&nbsp;B)<sup>&minus;1</sup>&Psi;(I&nbsp;&minus;&nbsp;B)<sup>&minus;T</sup>, with residual variances set so every variable has unit variance &mdash; so your typed values are standardized coefficients and path-tracing algebra holds exactly. The matrix is a <em>read-only output</em>: watch variables with no arrow between them become correlated anyway through shared causes. <strong>(3)&nbsp;Designate a target</strong> to get every variable&rsquo;s total causal effect on it, and <strong>save your model as Model&nbsp;A</strong> to test any rival structure you draw next: the rival is fitted by maximum likelihood against Model&nbsp;A&rsquo;s implied matrix and judged with &chi;&sup2;, df, and p.</p>
 
-    <h3 class="semb-h3">1 &middot; Variables &amp; Causal Structure (DAG &rarr; B matrix)</h3>
+    <h3 class="semb-h3">1 &middot; Draw the Causal Model (B matrix)</h3>
     <div class="sem-diagram-wrap">
       <button class="semb-canvas-btn" id="semb-add" type="button">+ Add Variable</button>
       <div id="semb-canvas"></div>
     </div>
-    <p class="semb-hint"><strong>Two ways to draw a directed path:</strong> pick the variables in the From&nbsp;&rarr;&nbsp;To selector below and press &ldquo;Draw path&rdquo;, or single-click one node then another on the canvas. Use a chip&rsquo;s <strong>&#8646;</strong> button to reverse a path&rsquo;s direction, its <strong>&times;</strong> button (or a click on the arrow itself) to delete it. Cycles are rejected. <strong>Double-click a node</strong> to rename or delete it; drag nodes to arrange the diagram. Variables with no incoming path are exogenous and freely correlated (dashed arcs).</p>
+    <p class="semb-hint"><strong>Draw a path</strong> with the From&nbsp;&rarr;&nbsp;To bar (typing its coefficient there), or single-click one node then another on the canvas, or tick targets in a node&rsquo;s editor (double-click the node). <strong>Type each path&rsquo;s causal value</strong> on its chip below &mdash; clicking a path&rsquo;s arrow jumps to its chip. Reverse (&#8646;) or delete (&times;) paths from their chips; cycles are rejected. Double-click a node to rename it, delete it, or mark it as the <strong>target outcome</strong>. Drag nodes to arrange the diagram.</p>
+
+    <div class="semb-editor" id="semb-editor" style="display:none;"></div>
 
     <div class="semb-pathbar">
       <span class="pb-label">Add a directed path:</span>
       <select id="semb-path-from" aria-label="Path source variable"></select>
       <span class="pb-arrow">&rarr;</span>
       <select id="semb-path-to" aria-label="Path target variable"></select>
+      <span class="pb-label" style="font-weight:600;">value</span>
+      <input type="number" id="semb-path-val" step="0.05" min="-1.5" max="1.5" value="0.5" aria-label="Causal coefficient">
       <button class="calc-btn secondary" id="semb-path-add" type="button" style="padding:8px 18px;">Draw path</button>
     </div>
 
-    <div class="semb-editor" id="semb-editor" style="display:none;"></div>
-
     <div class="semb-chips" id="semb-chips"></div>
 
-    <h3 class="semb-h3">2 &middot; Observed Correlations &mdash; the S matrix</h3>
-    <p class="semb-hint">Type the correlations you observed between your variables (each between &minus;1 and 1; the diagonal is fixed at 1). This grid is the sample covariance matrix <strong>S</strong> the model is tested against. The &chi;&sup2; test also needs the sample size those correlations came from.</p>
-    <div class="sem-table-wrap" id="semb-grid-wrap"></div>
-    <label class="semb-n-wrap">Assumed sample size n
-      <input type="number" id="semb-n" value="200" min="10" max="100000" step="10">
-    </label>
-
-    <div class="semb-status" id="semb-status">Add at least two variables to start.</div>
+    <div class="semb-status" id="semb-status">Add at least two variables and a path to start.</div>
 
     <div id="semb-results" style="display:none;">
-      <h3 class="semb-h3">3 &middot; Live Fit &mdash; Goodness of Fit (Maximum-Likelihood &chi;&sup2;)</h3>
-      <div class="sem-gof-grid" id="semb-gof"></div>
-      <p id="semb-gof-note" style="font-size:12.5px;color:var(--text-muted);line-height:1.6;margin:6px 0 0;"></p>
+      <h3 class="semb-h3">2 &middot; Implied Correlation Matrix (computed &mdash; read only)</h3>
+      <p class="semb-hint" style="margin-bottom:8px;">Derived from your drawn coefficients, never typed. <span style="color:#fbbf24;font-style:italic;">Amber italic</span> cells are correlations <em>induced without a direct arrow</em> &mdash; the signature of chains and shared causes.</p>
+      <div class="sem-table-wrap" id="semb-implied"></div>
 
-      <h3 class="semb-h3">Model Comparison (&Delta;&chi;&sup2; Test)</h3>
-      <p style="font-size:12.5px;color:var(--text-muted);line-height:1.6;margin:0 0 8px;">Save the current model as <strong style="color:var(--text);">Model A</strong>, then change the structure &mdash; the live fit is always <strong style="color:var(--text);">Model B</strong>. If one model is a simplified version of the other (same variables, a subset of its paths, no variable switching exogenous/endogenous status), the nested difference test applies: &Delta;&chi;&sup2; = &chi;&sup2;<sub>restricted</sub> &minus; &chi;&sup2;<sub>general</sub>, &Delta;df = df<sub>restricted</sub> &minus; df<sub>general</sub>. Non-nested pairs are compared with AIC/BIC. Saved models are automatically re-estimated when you edit the grid, so both &chi;&sup2; values always refer to the same S.</p>
-      <div class="btn-row" style="margin: 6px 0 10px;">
+      <h3 class="semb-h3">3 &middot; Causal Effects</h3>
+      <div id="semb-effects"></div>
+
+      <h3 class="semb-h3">4 &middot; Goodness of Fit &mdash; Test a Rival Model</h3>
+      <p style="font-size:12.5px;color:var(--text-muted);line-height:1.6;margin:0 0 8px;">Save the current drawing as <strong style="color:var(--text);">Model A (the &ldquo;true&rdquo; model)</strong> &mdash; its implied matrix becomes the data. Then redraw the structure however you like: the live drawing is <strong style="color:var(--text);">Model B</strong>, and its <em>structure</em> is re-estimated by maximum likelihood against Model&nbsp;A&rsquo;s matrix. A significant &chi;&sup2; means Model B&rsquo;s structure cannot reproduce the world Model&nbsp;A describes.</p>
+      <div class="btn-row" style="margin: 6px 0 6px;">
         <button class="calc-btn secondary" id="semb-save-a" type="button">Save current model as Model A</button>
+        <label class="semb-n-wrap" style="margin:0;">Assumed sample size n
+          <input type="number" id="semb-n" value="200" min="10" max="100000" step="10">
+        </label>
       </div>
       <div class="sem-table-wrap">
         <table class="sem-table" id="semb-compare"></table>
       </div>
+      <div class="sem-gof-grid" id="semb-gof" style="display:none;"></div>
       <div id="semb-verdict" class="semb-verdict"></div>
-
-      <h3 class="semb-h3">Parameter Estimates</h3>
-      <div class="sem-table-wrap">
-        <table class="sem-table" id="semb-est-table"></table>
-      </div>
     </div>
 
     <details style="margin-top: 16px;">
-      <summary style="cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:6px 0;">Try it in 30 seconds</summary>
+      <summary style="cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:6px 0;">Try it in 60 seconds: the donut confounder</summary>
       <p style="font-size:13px;color:var(--text-muted);line-height:1.7;margin:8px 0 0;">
-        Create three variables <strong style="color:var(--text);">A</strong>, <strong style="color:var(--text);">B</strong>, <strong style="color:var(--text);">C</strong>.
-        In the grid, set A&ndash;B = <strong style="color:var(--text);">0.60</strong>, B&ndash;C = <strong style="color:var(--text);">0.50</strong>, A&ndash;C = <strong style="color:var(--text);">0.30</strong>.
-        Draw the chain <strong style="color:var(--text);">A &rarr; B &rarr; C</strong>. A chain implies corr(A,C) = 0.60 &times; 0.50 = 0.30 &mdash; exactly what you typed &mdash; so &chi;&sup2;(1) &asymp; 0 and p &asymp; 1: your DAG is consistent with your data.
-        Now change A&ndash;C to <strong style="color:var(--text);">0.00</strong>: the chain over-predicts that correlation and &chi;&sup2; jumps &mdash; the test rejects the structure.
-        Add a direct path A &rarr; C and fit is perfect again, but saturated (df = 0): with as many parameters as data points, fit can no longer be tested.
+        Create three variables and rename them <strong style="color:var(--text);">summer</strong>, <strong style="color:var(--text);">donut_sales</strong>, and <strong style="color:var(--text);">C</strong> (the confounder &mdash; say, boardwalk foot traffic).
+        Draw <strong style="color:var(--text);">C &rarr; summer</strong> and type 0.80 on it, then <strong style="color:var(--text);">C &rarr; donut_sales</strong> at 0.80.
+        The implied matrix now shows corr(summer, donut_sales) = <strong style="color:var(--text);">0.64</strong> in amber &mdash; correlated with <em>no arrow between them</em>, purely through C.
+        Mark donut_sales as the <em>target</em>: summer&rsquo;s total causal effect on it is 0 (association &ne; causation).
+        Now save this as <strong style="color:var(--text);">Model A</strong>, delete both paths, draw <strong style="color:var(--text);">summer &rarr; donut_sales</strong> directly, and watch the fit test reject the rival: &chi;&sup2;(1) &asymp; 98 at n = 200, p &lt; .001.
       </p>
     </details>
   </div>
@@ -318,25 +297,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     return { inv: I, logDet: logDet, negDet: sign < 0 };
-  }
-
-  /* Cholesky positive-definiteness check for the user-typed matrix */
-  function isPD(S) {
-    var n = S.length, L = [];
-    for (var i = 0; i < n; i++) L.push(new Array(n).fill(0));
-    for (var i2 = 0; i2 < n; i2++) {
-      for (var j = 0; j <= i2; j++) {
-        var s = S[i2][j];
-        for (var k = 0; k < j; k++) s -= L[i2][k] * L[j][k];
-        if (i2 === j) {
-          if (s <= 1e-10) return false;
-          L[i2][i2] = Math.sqrt(s);
-        } else {
-          L[i2][j] = s / L[j][j];
-        }
-      }
-    }
-    return true;
   }
 
   function fml(S, Sigma, logDetS) {
@@ -414,9 +374,59 @@ document.addEventListener('DOMContentLoaded', function() {
     return h * Math.exp(-x2 + a * Math.log(x2) - lgamma(a));
   }
 
-  /* Path model over p observed variables.
-     Sigma = (I-B)^-1 Psi (I-B)^-T ; exogenous variables get free variances and
-     free pairwise correlations, endogenous get free disturbance variances. */
+  /* Forward RAM: typed standardized coefficients -> implied correlation
+     matrix. Exogenous variables independent; residual variances set to
+     1 - explained so every variable has unit variance (which is what makes
+     0.8 x 0.8 = 0.64 path-tracing hold exactly). */
+  function impliedCorr(ids, edges) {
+    var pos = {};
+    ids.forEach(function(id, i) { pos[id] = i; });
+    var indeg = {}, adj = {};
+    ids.forEach(function(id) { indeg[id] = 0; adj[id] = []; });
+    edges.forEach(function(e) { indeg[e.to]++; adj[e.from].push(e.to); });
+    var queue = ids.filter(function(id) { return indeg[id] === 0; });
+    var order = [];
+    while (queue.length) {
+      var k0 = queue.shift();
+      order.push(k0);
+      adj[k0].forEach(function(t) { if (--indeg[t] === 0) queue.push(t); });
+    }
+    if (order.length !== ids.length) return { error: 'cycle' };
+    var p = ids.length;
+    var Phi = [];
+    for (var i = 0; i < p; i++) Phi.push(new Array(p).fill(0));
+    var done = {}, resid = {};
+    for (var oi = 0; oi < order.length; oi++) {
+      var k = order[oi], ki = pos[k];
+      var parents = edges.filter(function(e) { return e.to === k; });
+      if (parents.length === 0) {
+        Phi[ki][ki] = 1;
+      } else {
+        for (var j = 0; j < order.length; j++) {
+          var jd = order[j];
+          if (!done[jd]) continue;
+          var ji = pos[jd], s = 0;
+          parents.forEach(function(e) { s += e.b * Phi[pos[e.from]][ji]; });
+          Phi[ki][ji] = s; Phi[ji][ki] = s;
+        }
+        var explained = 0;
+        parents.forEach(function(e1) {
+          parents.forEach(function(e2) {
+            explained += e1.b * e2.b * Phi[pos[e1.from]][pos[e2.from]];
+          });
+        });
+        resid[k] = 1 - explained;
+        if (resid[k] <= 0.0001) {
+          return { error: 'overflow', node: k, explained: explained };
+        }
+        Phi[ki][ki] = 1;
+      }
+      done[k] = true;
+    }
+    return { Phi: Phi, resid: resid };
+  }
+
+  /* Fitting model (free parameters) for the rival-vs-ModelA chi-square */
   function buildPathModel(p, edges) {
     var hasIn = {};
     edges.forEach(function(e) { hasIn[e.to] = true; });
@@ -426,28 +436,23 @@ document.addEventListener('DOMContentLoaded', function() {
     for (var a = 0; a < exo.length; a++)
       for (var b = a + 1; b < exo.length; b++) exoPairs.push([exo[a], exo[b]]);
     var q = edges.length + exo.length + exoPairs.length + endo.length;
-
-    function unpack(theta) {
+    function sigma(theta) {
       var idx = 0;
       var bs = theta.slice(idx, idx + edges.length); idx += edges.length;
       var evs = theta.slice(idx, idx + exo.length).map(Math.exp); idx += exo.length;
       var ers = theta.slice(idx, idx + exoPairs.length).map(Math.tanh); idx += exoPairs.length;
       var dvs = theta.slice(idx, idx + endo.length).map(Math.exp);
-      return { bs: bs, evs: evs, ers: ers, dvs: dvs };
-    }
-    function sigma(theta) {
-      var u = unpack(theta);
       var Psi = [];
       for (var i = 0; i < p; i++) Psi.push(new Array(p).fill(0));
-      exo.forEach(function(k, ki) { Psi[k][k] = u.evs[ki]; });
-      endo.forEach(function(k, ki) { Psi[k][k] = u.dvs[ki]; });
+      exo.forEach(function(k, ki) { Psi[k][k] = evs[ki]; });
+      endo.forEach(function(k, ki) { Psi[k][k] = dvs[ki]; });
       exoPairs.forEach(function(pr, pi) {
-        var c = u.ers[pi] * Math.sqrt(Psi[pr[0]][pr[0]] * Psi[pr[1]][pr[1]]);
+        var c = ers[pi] * Math.sqrt(Psi[pr[0]][pr[0]] * Psi[pr[1]][pr[1]]);
         Psi[pr[0]][pr[1]] = c; Psi[pr[1]][pr[0]] = c;
       });
       var IB = [];
       for (var i2 = 0; i2 < p; i2++) { IB.push(new Array(p).fill(0)); IB[i2][i2] = 1; }
-      edges.forEach(function(e, ei) { IB[e.to][e.from] = -u.bs[ei]; });
+      edges.forEach(function(e, ei) { IB[e.to][e.from] = -bs[ei]; });
       var inv = invLogDet(IB);
       if (!inv) return null;
       var A = inv.inv;
@@ -469,29 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
     for (i4 = 0; i4 < exo.length; i4++) theta0.push(0);
     for (i4 = 0; i4 < exoPairs.length; i4++) theta0.push(0);
     for (i4 = 0; i4 < endo.length; i4++) theta0.push(Math.log(0.5));
-    return { sigma: sigma, unpack: unpack, theta0: theta0, q: q, exo: exo, endo: endo, exoPairs: exoPairs };
-  }
-
-  function fitIndices(S, Sigma, n, q) {
-    var p = S.length;
-    var ldS = invLogDet(S).logDet;
-    var F = fml(S, Sigma, ldS);
-    var df = p * (p + 1) / 2 - q;
-    var chi2 = Math.max(0, (n - 1) * F);
-    var Fb = 0;
-    for (var i = 0; i < p; i++) Fb += Math.log(S[i][i]);
-    Fb -= ldS;
-    var chiB = (n - 1) * Fb, dfB = p * (p - 1) / 2;
-    var cfi = df > 0 ? 1 - Math.max(chi2 - df, 0) / Math.max(chiB - dfB, chi2 - df, 1e-10) : 1;
-    var tli = df > 0 && dfB > 0 ? Math.min(1, ((chiB / dfB) - (chi2 / df)) / ((chiB / dfB) - 1)) : 1;
-    var rmsea = df > 0 ? Math.sqrt(Math.max(chi2 - df, 0) / (df * (n - 1))) : 0;
-    var sum = 0, cnt = 0;
-    for (var i2 = 0; i2 < p; i2++)
-      for (var j2 = 0; j2 <= i2; j2++) {
-        var r = (S[i2][j2] - Sigma[i2][j2]) / Math.sqrt(S[i2][i2] * S[j2][j2]);
-        sum += r * r; cnt++;
-      }
-    return { chi2: chi2, df: df, cfi: cfi, tli: tli, rmsea: rmsea, srmr: Math.sqrt(sum / cnt) };
+    return { sigma: sigma, theta0: theta0, q: q };
   }
 
   /* ================= state ================= */
@@ -505,27 +488,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
   var state = {
     nodes: [],        /* {id, name, x, y, color} */
-    edges: [],        /* {from: nodeId, to: nodeId} */
-    corr: {},         /* 'idA|idB' (sorted ids) -> number */
+    edges: [],        /* {from, to, b} — b is the typed causal coefficient */
+    targetId: null,
     n: 200,
     selected: null,
     editing: null,
     nodeCounter: 0,
-    rev: 0,
-    annotations: null,/* {rev, edgeLabels, rhoMap, ok} */
-    currentFit: null, /* Model B snapshot */
-    modelA: null      /* {spec:{ids,edges}, desc, chi2, df, p, aic, bic, exoIds} */
+    modelA: null      /* {desc, ids, S (implied matrix), names} */
   };
 
   function nodeById(id) {
     for (var i = 0; i < state.nodes.length; i++) if (state.nodes[i].id === id) return state.nodes[i];
     return null;
-  }
-  function bump() { state.rev++; }
-  function pairKey(a, b) { return a < b ? a + '|' + b : b + '|' + a; }
-  function corrOf(a, b) {
-    var v = state.corr[pairKey(a, b)];
-    return typeof v === 'number' && isFinite(v) ? v : 0;
   }
 
   function topoOK(nodes, edges) {
@@ -546,12 +520,12 @@ document.addEventListener('DOMContentLoaded', function() {
     return seen === nodes.length;
   }
 
-  /* ================= estimation ================= */
+  /* ================= recompute (forward, closed-form) ================= */
 
-  var estTimer = null;
-  function scheduleEstimate() {
-    if (estTimer) clearTimeout(estTimer);
-    estTimer = setTimeout(estimate, 120);
+  var recomputeTimer = null;
+  function scheduleRecompute() {
+    if (recomputeTimer) clearTimeout(recomputeTimer);
+    recomputeTimer = setTimeout(recompute, 80);
   }
 
   function setStatus(msg, cls) {
@@ -560,292 +534,39 @@ document.addEventListener('DOMContentLoaded', function() {
     el.textContent = msg;
   }
 
-  function clearResults(msg, cls) {
-    state.annotations = { rev: state.rev, edgeLabels: {}, rhoMap: {}, ok: false };
-    state.currentFit = null;
-    document.getElementById('semb-results').style.display = 'none';
-    setStatus(msg, cls || '');
-    renderDiagram();
-  }
+  function fmtP(p) { return p < 0.001 ? '<.001' : p.toFixed(3); }
+  function escXml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
-  /* Build S for a given list of node ids from the typed grid. Returns
-     {S} or {error} */
-  function buildS(ids) {
-    var p = ids.length;
-    var S = [];
-    for (var i = 0; i < p; i++) S.push(new Array(p).fill(0));
-    for (var i2 = 0; i2 < p; i2++) {
-      S[i2][i2] = 1;
-      for (var j = i2 + 1; j < p; j++) {
-        var v = corrOf(ids[i2], ids[j]);
-        if (Math.abs(v) >= 1) {
-          return { error: 'Correlation ' + nodeById(ids[i2]).name + '–' + nodeById(ids[j]).name + ' must be strictly between −1 and 1.' };
-        }
-        S[i2][j] = v; S[j][i2] = v;
-      }
-    }
-    if (!isPD(S)) {
-      return { error: 'The correlations you typed are not jointly possible (the matrix is not positive definite). Adjust the values — e.g. three mutual correlations of 0.9, 0.9, −0.9 cannot coexist.' };
-    }
-    return { S: S };
-  }
-
-  /* Pure fit of an edge set over a list of node ids against the current grid */
-  function computeFitFor(ids, edges) {
-    var built = buildS(ids);
-    if (built.error) return { error: built.error };
-    var S = built.S, p = ids.length;
-    var pos = {};
-    ids.forEach(function(id, i) { pos[id] = i; });
-    var idxEdges = edges.map(function(e) { return { from: pos[e.from], to: pos[e.to] }; });
-    var model = buildPathModel(p, idxEdges);
-    var ldS = invLogDet(S).logDet;
-    var iters = Math.min(2000, 600 + 120 * model.q);
-    var res = minimize(function(t) { return fml(S, model.sigma(t), ldS); }, model.theta0, iters);
-    var Sigma = model.sigma(res.theta);
-    if (!Sigma) return { error: 'Estimation failed for this structure.' };
-    var fit = fitIndices(S, Sigma, state.n, model.q);
-    var u = model.unpack(res.theta);
-    return {
-      S: S, model: model, Sigma: Sigma, fit: fit, u: u,
-      p: chi2P(fit.chi2, fit.df),
-      aic: fit.chi2 + 2 * model.q,
-      bic: fit.chi2 + model.q * Math.log(state.n),
-      ids: ids.slice(), idxEdges: idxEdges
-    };
-  }
-
-  function describeEdges(edges) {
-    return edges.length === 0
-      ? 'No paths (saturated: all correlations free)'
-      : edges.map(function(e) {
-          var nf = nodeById(e.from), nt = nodeById(e.to);
-          return (nf ? nf.name : '?') + '→' + (nt ? nt.name : '?');
-        }).join(', ');
-  }
-
-  function estimate() {
-    var rev = state.rev;
+  function recompute() {
     if (state.nodes.length < 2) {
-      clearResults(state.nodes.length === 0
-        ? 'Click “+ Add Variable” to create your variables, then type their correlations below.'
-        : 'Add a second variable to start estimating.', '');
+      document.getElementById('semb-results').style.display = 'none';
+      setStatus(state.nodes.length === 0
+        ? 'Click “+ Add Variable” to create your first variable.'
+        : 'Add a second variable, then draw a path between them.', '');
       return;
     }
     var ids = state.nodes.map(function(nd) { return nd.id; });
-    var t0 = Date.now();
-    var cf = computeFitFor(ids, state.edges);
-    if (cf.error) { clearResults(cf.error, 'err'); return; }
-    if (rev !== state.rev) return; /* superseded */
-    var ms = Date.now() - t0;
-
-    var fit = cf.fit, u = cf.u, Sigma = cf.Sigma, model = cf.model;
-
-    /* annotations: standardized coefficients from the implied covariance */
-    var edgeLabels = {};
-    var stdPaths = [];
-    state.edges.forEach(function(e, ei) {
-      var f = cf.idxEdges[ei].from, t = cf.idxEdges[ei].to;
-      var bstd = u.bs[ei] * Math.sqrt(Sigma[f][f]) / Math.sqrt(Sigma[t][t]);
-      if (Math.abs(bstd) < 0.005) bstd = 0; /* avoid "-0.00" labels */
-      stdPaths.push(bstd);
-      edgeLabels[e.from + '>' + e.to] = bstd.toFixed(2);
-    });
-    var rhoMap = {};
-    model.exoPairs.forEach(function(pr, pi) {
-      var a = ids[pr[0]], b = ids[pr[1]];
-      rhoMap[a + '|' + b] = u.ers[pi]; rhoMap[b + '|' + a] = u.ers[pi];
-    });
-    var r2 = {};
-    model.endo.forEach(function(k, ki) { r2[ids[k]] = 1 - u.dvs[ki] / Sigma[k][k]; });
-
-    state.annotations = { rev: rev, edgeLabels: edgeLabels, rhoMap: rhoMap, ok: true };
-
-    var exoIds = model.exo.map(function(k) { return ids[k]; }).sort();
-    state.currentFit = {
-      desc: describeEdges(state.edges),
-      ids: ids.slice().sort(),
-      edgeKeys: state.edges.map(function(e) { return e.from + '>' + e.to; }).sort(),
-      exoIds: exoIds,
-      spec: { ids: ids.slice(), edges: state.edges.map(function(e) { return { from: e.from, to: e.to }; }) },
-      chi2: fit.chi2, df: fit.df, p: cf.p, aic: cf.aic, bic: cf.bic
-    };
-
-    /* auto re-estimate a saved Model A against the current grid/n */
-    if (state.modelA) {
-      var missing = state.modelA.spec.ids.some(function(id) { return !nodeById(id); });
-      if (missing) {
-        state.modelA = null;
-      } else {
-        var acf = computeFitFor(state.modelA.spec.ids, state.modelA.spec.edges);
-        if (acf.error) {
-          state.modelA = null;
-        } else {
-          state.modelA.chi2 = acf.fit.chi2; state.modelA.df = acf.fit.df;
-          state.modelA.p = acf.p; state.modelA.aic = acf.aic; state.modelA.bic = acf.bic;
-          state.modelA.desc = describeEdges(state.modelA.spec.edges);
-        }
-      }
+    var out = impliedCorr(ids, state.edges);
+    if (out.error === 'overflow') {
+      document.getElementById('semb-results').style.display = 'none';
+      setStatus('The paths into “' + nodeById(out.node).name + '” imply ' + (out.explained * 100).toFixed(0) +
+        '% of its variance explained — impossible (max 100%). Reduce those coefficients.', 'err');
+      return;
     }
-
-    /* ---- render ---- */
+    if (out.error) {
+      document.getElementById('semb-results').style.display = 'none';
+      setStatus('The model contains a cycle — remove a path.', 'err');
+      return;
+    }
+    var Phi = out.Phi, resid = out.resid;
     document.getElementById('semb-results').style.display = '';
 
-    var gofHtml = '';
-    gofHtml += gofItem('χ²', fit.chi2.toFixed(2), 'discrepancy of S vs Σ', fit.df === 0 || cf.p >= 0.05);
-    gofHtml += gofItem('df', String(fit.df), 'moments − free params', null);
-    gofHtml += gofItem('p-value', fit.df === 0 ? '—' : fmtP(cf.p), 'p ≥ .05 = acceptable fit', fit.df === 0 || cf.p >= 0.05);
-    gofHtml += gofItem('CFI', fit.cfi.toFixed(3), '≥ 0.95 good', fit.cfi >= 0.95);
-    gofHtml += gofItem('RMSEA', fit.rmsea.toFixed(3), '≤ 0.06 good', fit.rmsea <= 0.06);
-    gofHtml += gofItem('SRMR', fit.srmr.toFixed(3), '≤ 0.08 good', fit.srmr <= 0.08);
-    document.getElementById('semb-gof').innerHTML = gofHtml;
-    document.getElementById('semb-gof-note').textContent =
-      'Fit of your drawn DAG to the ' + state.nodes.length + '×' + state.nodes.length +
-      ' correlation matrix you typed (assumed n = ' + state.n + ', ' + model.q + ' free parameters, ' + ms + 'ms). ' +
-      (fit.df === 0
-        ? 'This model is saturated (df = 0): it has as many parameters as observed correlations, reproduces S exactly, and its fit cannot be tested — remove a path to create a testable restriction.'
-        : 'χ² tests whether your structure can reproduce the typed correlations.');
-
-    var rowsHtml = '<tr><th>Parameter</th><th>Estimate (standardized)</th></tr>';
-    if (state.edges.length > 0) {
-      rowsHtml += '<tr><td class="section-cell" colspan="2">Structural paths (drawn arrows)</td></tr>';
-      state.edges.forEach(function(e, ei) {
-        rowsHtml += '<tr><td>' + escXml(nodeById(e.from).name) + ' → ' + escXml(nodeById(e.to).name) + '</td>' +
-          '<td class="accent-cell">' + stdPaths[ei].toFixed(3) + '</td></tr>';
-      });
-    }
-    if (model.exoPairs.length > 0) {
-      rowsHtml += '<tr><td class="section-cell" colspan="2">Exogenous correlations (free by default)</td></tr>';
-      model.exoPairs.forEach(function(pr, pi) {
-        rowsHtml += '<tr><td>' + escXml(nodeById(ids[pr[0]]).name) + ' ↔ ' + escXml(nodeById(ids[pr[1]]).name) + '</td><td class="accent-cell">' + u.ers[pi].toFixed(3) + '</td></tr>';
-      });
-    }
-    if (model.endo.length > 0) {
-      rowsHtml += '<tr><td class="section-cell" colspan="2">Variance explained</td></tr>';
-      model.endo.forEach(function(k) {
-        rowsHtml += '<tr><td>R² — ' + escXml(nodeById(ids[k]).name) + '</td><td class="accent-cell">' + r2[ids[k]].toFixed(3) + '</td></tr>';
-      });
-    }
-    document.getElementById('semb-est-table').innerHTML = rowsHtml;
-
-    setStatus('Live: χ²(' + fit.df + ') = ' + fit.chi2.toFixed(2) + (fit.df > 0 ? ', p ' + (cf.p < 0.001 ? '< .001' : '= ' + cf.p.toFixed(3)) : ' (saturated)') + ' — re-fits automatically as you edit variables, paths, or correlations.', 'ok');
-    renderDiagram();
-    renderComparison();
-  }
-
-  /* ================= comparison (Δχ² test) ================= */
-
-  function gofItem(name, val, rule, good) {
-    var cls = good === null ? '' : (good ? ' good' : ' bad');
-    return '<div class="sem-gof-item' + cls + '"><strong>' + name + '</strong><span class="gof-val">' + val + '</span><span class="gof-rule">' + rule + '</span></div>';
-  }
-  function fmtP(p) { return p < 0.001 ? '<.001' : p.toFixed(3); }
-  function sameArr(a, b) {
-    return a.length === b.length && a.every(function(x, i) { return x === b[i]; });
-  }
-  function subsetArr(small, big) {
-    var s = {};
-    big.forEach(function(x) { s[x] = true; });
-    return small.every(function(x) { return s[x]; });
-  }
-
-  function nestingInfo(A, B) {
-    if (!sameArr(A.ids, B.ids)) return { type: 'diffvars' };
-    var aInB = subsetArr(A.edgeKeys, B.edgeKeys);
-    var bInA = subsetArr(B.edgeKeys, A.edgeKeys);
-    if (aInB && bInA) return { type: 'identical' };
-    var R, G, rLabel, gLabel;
-    if (aInB) { R = A; G = B; rLabel = 'Model A'; gLabel = 'Model B'; }
-    else if (bInA) { R = B; G = A; rLabel = 'Model B'; gLabel = 'Model A'; }
-    else return { type: 'nonnested', reason: 'neither model’s paths are a subset of the other’s' };
-    if (!sameArr(R.exoIds, G.exoIds)) {
-      return { type: 'nonnested', reason: 'removing the extra path(s) changes which variables are exogenous, so the simpler model is not a constrained version of the larger one' };
-    }
-    return { type: 'nested', R: R, G: G, rLabel: rLabel, gLabel: gLabel };
-  }
-
-  function edgeKeyToNames(k) {
-    var parts = k.split('>');
-    var a = nodeById(parts[0]), b = nodeById(parts[1]);
-    return (a ? a.name : '?') + ' → ' + (b ? b.name : '?');
-  }
-
-  function renderComparison() {
-    var tbl = document.getElementById('semb-compare');
-    var verdict = document.getElementById('semb-verdict');
-    var A = state.modelA, B = state.currentFit;
-
-    var head = '<tr><th></th><th>Structural paths</th><th>χ²</th><th>df</th><th>p</th><th>AIC</th><th>BIC</th></tr>';
-    function row(label, f, hint) {
-      if (!f) return '<tr><td style="white-space:nowrap;">' + label + '</td><td colspan="6" style="font-family:inherit;color:var(--text-dim);">' + hint + '</td></tr>';
-      return '<tr><td style="white-space:nowrap;">' + label + '</td><td style="font-family:inherit;">' + escXml(f.desc) + '</td>' +
-        '<td>' + f.chi2.toFixed(2) + '</td><td>' + f.df + '</td><td>' + (f.df === 0 ? '—' : fmtP(f.p)) + '</td>' +
-        '<td>' + f.aic.toFixed(1) + '</td><td>' + f.bic.toFixed(1) + '</td></tr>';
-    }
-    tbl.innerHTML = head +
-      row('Model A (saved)', A, 'Nothing saved yet — press “Save current model as Model A”, then edit the structure.') +
-      row('Model B (current)', B, 'The live fit appears here.');
-
-    if (!A || !B) {
-      verdict.className = 'semb-verdict na';
-      verdict.innerHTML = 'The Δχ² test runs automatically once <strong>Model A</strong> is saved and a (different) current model is estimated on the same variables and grid.';
-      return;
-    }
-    var Acmp = { ids: A.spec.ids.slice().sort(), edgeKeys: A.spec.edges.map(function(e) { return e.from + '>' + e.to; }).sort(), exoIds: A.exoIds, chi2: A.chi2, df: A.df, aic: A.aic, bic: A.bic };
-    var info = nestingInfo(Acmp, B);
-    if (info.type === 'diffvars') {
-      verdict.className = 'semb-verdict na';
-      verdict.innerHTML = '<strong>Not comparable.</strong> The two models use different variables, so their χ² values refer to different correlation matrices.';
-      return;
-    }
-    if (info.type === 'identical') {
-      verdict.className = 'semb-verdict na';
-      verdict.innerHTML = '<strong>Model A and Model B are identical</strong> — add or remove a path to test something.';
-      return;
-    }
-    if (info.type === 'nonnested') {
-      var aicPick = A.aic < B.aic ? 'Model A' : 'Model B';
-      var bicPick = A.bic < B.bic ? 'Model A' : 'Model B';
-      verdict.className = 'semb-verdict na';
-      verdict.innerHTML = '<strong>Not nested</strong> (' + info.reason + '), so the Δχ² difference test does not apply. ' +
-        'Compare information criteria instead (lower is better): AIC favors <strong>' + aicPick + '</strong> (' + A.aic.toFixed(1) + ' vs ' + B.aic.toFixed(1) + '); ' +
-        'BIC favors <strong>' + bicPick + '</strong> (' + A.bic.toFixed(1) + ' vs ' + B.bic.toFixed(1) + ').';
-      return;
-    }
-    var dChi = info.R.chi2 - info.G.chi2;
-    var dDf = info.R.df - info.G.df;
-    var added = info.G.edgeKeys.filter(function(k) { return info.R.edgeKeys.indexOf(k) === -1; })
-      .map(edgeKeyToNames).join(', ');
-    if (dDf <= 0) {
-      verdict.className = 'semb-verdict na';
-      verdict.innerHTML = '<strong>Equal degrees of freedom</strong> — the models differ in paths but not in parameter count, so there is no Δχ² test to run.';
-      return;
-    }
-    if (dChi < -0.5) {
-      verdict.className = 'semb-verdict na';
-      verdict.innerHTML = '<strong>Numerical hiccup:</strong> the restricted model fit better than the general one, which nesting rules out — optimizer noise. Nudge a correlation cell to re-estimate, then compare again.';
-      return;
-    }
-    dChi = Math.max(0, dChi);
-    var pd = chi2P(dChi, dDf);
-    var sig = pd < 0.05;
-    verdict.className = 'semb-verdict ' + (sig ? 'sig' : 'nosig');
-    verdict.innerHTML =
-      '<strong>' + info.rLabel + ' is nested within ' + info.gLabel + '</strong> (it removes: ' + escXml(added) + ').<br>' +
-      '<span class="delta">Δχ² = ' + dChi.toFixed(2) + ', Δdf = ' + dDf + ', p ' + (pd < 0.001 ? '&lt; .001' : '= ' + pd.toFixed(3)) + '</span><br>' +
-      (sig
-        ? 'Significant: the extra path' + (dDf > 1 ? 's' : '') + ' in <strong>' + info.gLabel + '</strong> genuinely improve' + (dDf > 1 ? '' : 's') + ' fit. <strong>' + info.gLabel + ' is statistically superior.</strong>'
-        : 'Not significant: the extra path' + (dDf > 1 ? 's do' : ' does') + ' not improve fit more than chance would. By parsimony, <strong>prefer the simpler ' + info.rLabel + '</strong>.');
-  }
-
-  /* ================= correlation grid ================= */
-
-  function renderGrid() {
-    var wrap = document.getElementById('semb-grid-wrap');
-    if (state.nodes.length < 2) {
-      wrap.innerHTML = '<span style="font-size:12.5px;color:var(--text-dim);">The grid appears once you have at least two variables.</span>';
-      return;
-    }
+    /* --- implied correlation matrix (read-only) --- */
+    var directPair = {};
+    state.edges.forEach(function(e) {
+      directPair[e.from + '|' + e.to] = true;
+      directPair[e.to + '|' + e.from] = true;
+    });
     var html = '<table class="semb-grid"><tr><th></th>';
     state.nodes.forEach(function(nd) { html += '<th title="' + escXml(nd.name) + '">' + escXml(nd.name) + '</th>'; });
     html += '</tr>';
@@ -853,32 +574,143 @@ document.addEventListener('DOMContentLoaded', function() {
       html += '<tr><th title="' + escXml(ri.name) + '">' + escXml(ri.name) + '</th>';
       state.nodes.forEach(function(ci, j) {
         if (i === j) { html += '<td class="diag">1.00</td>'; return; }
-        var key = pairKey(ri.id, ci.id);
-        var v = state.corr[key];
-        var shown = (typeof v === 'number' && isFinite(v)) ? v : 0;
-        if (i < j) {
-          html += '<td><input type="number" step="0.05" min="-0.99" max="0.99" value="' + shown + '" data-pair="' + key + '" aria-label="corr ' + escXml(ri.name) + '-' + escXml(ci.name) + '"></td>';
-        } else {
-          html += '<td class="mirror" data-mirror="' + key + '">' + shown.toFixed(2) + '</td>';
-        }
+        var v = Phi[i][j];
+        var induced = !directPair[ri.id + '|' + ci.id] && Math.abs(v) > 0.005;
+        html += '<td' + (induced ? ' class="induced" title="No direct arrow — induced by the causal structure"' : '') + '>' + v.toFixed(2) + '</td>';
       });
       html += '</tr>';
     });
     html += '</table>';
-    wrap.innerHTML = html;
+    document.getElementById('semb-implied').innerHTML = html;
 
-    var inputs = wrap.querySelectorAll('input[data-pair]');
-    for (var k = 0; k < inputs.length; k++) {
-      inputs[k].addEventListener('input', function() {
-        var key = this.getAttribute('data-pair');
-        var v = parseFloat(this.value);
-        state.corr[key] = isFinite(v) ? v : 0;
-        var mirror = wrap.querySelector('[data-mirror="' + key + '"]');
-        if (mirror) mirror.textContent = (isFinite(v) ? v : 0).toFixed(2);
-        bump();
-        renderDiagram();      /* labels go stale ('…') until the re-fit lands */
-        scheduleEstimate();
+    /* --- causal effects --- */
+    var eh = '';
+    var pos = {};
+    ids.forEach(function(id, i) { pos[id] = i; });
+    if (state.targetId && nodeById(state.targetId)) {
+      var P = ids.length;
+      var IB = [];
+      for (var bi = 0; bi < P; bi++) { IB.push(new Array(P).fill(0)); IB[bi][bi] = 1; }
+      state.edges.forEach(function(e) { IB[pos[e.to]][pos[e.from]] = -e.b; });
+      var inv = invLogDet(IB);
+      if (inv) {
+        var tgt = nodeById(state.targetId);
+        var trow = inv.inv[pos[state.targetId]];
+        eh += '<div class="sem-table-wrap"><table class="sem-table"><tr><th>Total causal effect on target “' + escXml(tgt.name) + '”</th><th>Effect (direct + indirect)</th><th>Implied correlation</th></tr>';
+        ids.forEach(function(id, ix) {
+          if (id === state.targetId) return;
+          var te = ix === pos[state.targetId] ? 0 : trow[ix];
+          eh += '<tr><td>' + escXml(nodeById(id).name) + '</td><td class="accent-cell">' + te.toFixed(3) + '</td><td>' + Phi[pos[state.targetId]][ix].toFixed(3) + '</td></tr>';
+        });
+        var tR2 = resid[state.targetId] !== undefined ? 1 - resid[state.targetId] : 0;
+        eh += '<tr><td>R² of target (variance explained by its causes)</td><td colspan="2" class="accent-cell">' + tR2.toFixed(3) + '</td></tr>';
+        eh += '</table></div>';
+        eh += '<p style="font-size:12px;color:var(--text-dim);margin:2px 0 0;">Where the total effect is 0 but the implied correlation is not, the association is spurious — driven by confounding, not causation.</p>';
+      }
+    } else {
+      eh += '<p style="font-size:12.5px;color:var(--text-dim);margin:4px 0;">No target designated. Double-click a variable and tick <em>Is Target</em> to get every variable’s total causal effect on it.</p>';
+    }
+    /* R² of endogenous variables */
+    var endoIds = Object.keys(resid);
+    if (endoIds.length > 0) {
+      eh += '<div class="sem-table-wrap"><table class="sem-table"><tr><th>Endogenous variable</th><th>R² (variance explained)</th><th>Residual variance</th></tr>';
+      endoIds.forEach(function(id) {
+        eh += '<tr><td>' + escXml(nodeById(id).name) + '</td><td class="accent-cell">' + (1 - resid[id]).toFixed(3) + '</td><td>' + resid[id].toFixed(3) + '</td></tr>';
       });
+      eh += '</table></div>';
+    }
+    document.getElementById('semb-effects').innerHTML = eh;
+
+    /* --- rival fit vs Model A --- */
+    renderComparison(Phi);
+
+    setStatus('Live: implied correlations recomputed from your drawn coefficients (' + state.nodes.length + ' variables, ' + state.edges.length + ' paths).', 'ok');
+    renderDiagram();
+  }
+
+  /* ================= Model A vs rival Model B ================= */
+
+  function gofItem(name, val, rule, good) {
+    var cls = good === null ? '' : (good ? ' good' : ' bad');
+    return '<div class="sem-gof-item' + cls + '"><strong>' + name + '</strong><span class="gof-val">' + val + '</span><span class="gof-rule">' + rule + '</span></div>';
+  }
+
+  function renderComparison(PhiCurrent) {
+    var tbl = document.getElementById('semb-compare');
+    var gofEl = document.getElementById('semb-gof');
+    var verdict = document.getElementById('semb-verdict');
+    var A = state.modelA;
+
+    var curDesc = state.edges.length === 0 ? 'No paths' : state.edges.map(function(e) {
+      return nodeById(e.from).name + '→' + nodeById(e.to).name + ' (' + e.b.toFixed(2) + ')';
+    }).join(', ');
+
+    var head = '<tr><th></th><th>Structure</th></tr>';
+    tbl.innerHTML = head +
+      '<tr><td style="white-space:nowrap;">Model A (saved “truth”)</td><td style="font-family:inherit;' + (A ? '' : 'color:var(--text-dim);') + '">' + (A ? escXml(A.desc) : 'Nothing saved yet — press “Save current model as Model A”.') + '</td></tr>' +
+      '<tr><td style="white-space:nowrap;">Model B (current drawing)</td><td style="font-family:inherit;">' + escXml(curDesc) + '</td></tr>';
+
+    if (!A) {
+      gofEl.style.display = 'none';
+      verdict.className = 'semb-verdict na';
+      verdict.innerHTML = 'No fit test yet: a lone model trivially reproduces its own implied matrix. Save it as <strong>Model A</strong>, then redraw a rival structure to test.';
+      return;
+    }
+    /* variable set must match */
+    var curIds = state.nodes.map(function(nd) { return nd.id; }).sort();
+    if (curIds.join(',') !== A.ids.slice().sort().join(',')) {
+      state.modelA = null;
+      gofEl.style.display = 'none';
+      verdict.className = 'semb-verdict na';
+      verdict.innerHTML = '<strong>Model A was cleared</strong> — the set of variables changed, so its saved matrix no longer matches. Save a new Model A.';
+      return;
+    }
+    /* same structure? */
+    var curKeys = state.edges.map(function(e) { return e.from + '>' + e.to; }).sort().join(',');
+    if (curKeys === A.edgeKeys) {
+      gofEl.style.display = 'none';
+      verdict.className = 'semb-verdict na';
+      verdict.innerHTML = '<strong>Model B has the same structure as Model A</strong>, so it can reproduce Model A’s matrix exactly (χ² = 0 by construction). Change the paths to test a genuine rival.';
+      return;
+    }
+
+    /* fit B's structure (free parameters) against A's implied matrix */
+    var pos = {};
+    A.ids.forEach(function(id, i) { pos[id] = i; });
+    var idxEdges = state.edges.map(function(e) { return { from: pos[e.from], to: pos[e.to] }; });
+    var p = A.ids.length;
+    var model = buildPathModel(p, idxEdges);
+    var moments = p * (p + 1) / 2;
+    var df = moments - model.q;
+    if (df < 0) {
+      gofEl.style.display = 'none';
+      verdict.className = 'semb-verdict na';
+      verdict.innerHTML = '<strong>Model B has more parameters than moments</strong> (df &lt; 0) — not identified; remove paths.';
+      return;
+    }
+    var ldS = invLogDet(A.S).logDet;
+    var res = minimize(function(t) { return fml(A.S, model.sigma(t), ldS); }, model.theta0, Math.min(2000, 600 + 130 * model.q));
+    var F = Math.max(0, res.f);
+    var chi2 = (state.n - 1) * F;
+    var pval = chi2P(chi2, df);
+
+    gofEl.style.display = '';
+    gofEl.innerHTML =
+      gofItem('χ²', chi2.toFixed(2), 'B fitted to A’s matrix', df === 0 || pval >= 0.05) +
+      gofItem('df', String(df), 'moments − free params', null) +
+      gofItem('p-value', df === 0 ? '—' : fmtP(pval), 'p ≥ .05 = consistent', df === 0 || pval >= 0.05);
+
+    if (df === 0) {
+      verdict.className = 'semb-verdict na';
+      verdict.innerHTML = '<strong>Model B is saturated</strong> (df = 0): with as many free parameters as moments it reproduces <em>any</em> matrix, including Model A’s — the test has no power. Remove a path to make B falsifiable.';
+    } else if (pval >= 0.05) {
+      verdict.className = 'semb-verdict nosig';
+      verdict.innerHTML = '<span class="delta">χ²(' + df + ') = ' + chi2.toFixed(2) + ', p = ' + fmtP(pval) + '</span><br>' +
+        '<strong>Model B’s structure is consistent</strong> with the world Model A describes (at n = ' + state.n + '): its constraints can reproduce Model A’s implied correlations.';
+    } else {
+      verdict.className = 'semb-verdict sig';
+      verdict.innerHTML = '<span class="delta">χ²(' + df + ') = ' + chi2.toFixed(2) + ', p ' + (pval < 0.001 ? '< .001' : '= ' + fmtP(pval)) + '</span><br>' +
+        '<strong>Rejected:</strong> Model B’s structure cannot reproduce the correlations implied by Model A. If A is the truth, a study of n = ' + state.n + ' would be expected to detect B’s misspecification.';
     }
   }
 
@@ -886,7 +718,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   var NW = 150, NH = 52, VW = 860, VH = 460;
 
-  function rectBoundary(fromN, toN, shrink) {
+  function nodeBoundary(fromN, toN, shrink) {
     var dx = toN.x - fromN.x, dy = toN.y - fromN.y;
     var len = Math.sqrt(dx * dx + dy * dy) || 1;
     var t = 1 / Math.max(Math.abs(dx) / (NW / 2 + 6), Math.abs(dy) / (NH / 2 + 6), 1e-9);
@@ -895,11 +727,6 @@ document.addEventListener('DOMContentLoaded', function() {
     return { x: fromN.x + dx * t, y: fromN.y + dy * t };
   }
 
-  function escXml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
-
-  /* Arrowheads drawn as plain polygons — no <marker>/context-stroke, which
-     some browsers don't support (heads would silently vanish and paths
-     would look undirected). */
   function arrowHeadAt(x, y, dirX, dirY, color, size) {
     var s = size || 11;
     var len = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
@@ -917,63 +744,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (state.nodes.length === 0) {
       svg += '<text x="' + (VW / 2) + '" y="' + (VH / 2 - 8) + '" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="16" font-family="sans-serif">The canvas is empty.</text>' +
-        '<text x="' + (VW / 2) + '" y="' + (VH / 2 + 18) + '" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="13" font-family="sans-serif">Click “+ Add Variable” to create your first variable — no data files needed.</text>';
+        '<text x="' + (VW / 2) + '" y="' + (VH / 2 + 18) + '" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="13" font-family="sans-serif">Click “+ Add Variable”, then draw paths and type causal values on them — correlations are computed for you.</text>';
     }
 
-    var fresh = state.annotations && state.annotations.rev === state.rev && state.annotations.ok;
-    var hasIn = {};
-    state.edges.forEach(function(e) { hasIn[e.to] = true; });
-    var exo = state.nodes.filter(function(nd) { return !hasIn[nd.id]; });
-
-    /* exogenous correlation arcs (only when few, to avoid clutter) */
-    if (exo.length >= 2 && exo.length <= 4 && state.nodes.length >= 2) {
-      for (var a = 0; a < exo.length; a++) {
-        for (var b = a + 1; b < exo.length; b++) {
-          var na = exo[a], nb = exo[b];
-          var p1 = rectBoundary(na, nb, 2), p2 = rectBoundary(nb, na, 2);
-          var mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
-          var nx = -(p2.y - p1.y), ny = p2.x - p1.x;
-          var nl = Math.sqrt(nx * nx + ny * ny) || 1;
-          var off = 42;
-          var cqx = mx + nx / nl * off, cqy = my + ny / nl * off;
-          var arcCol = 'rgba(255,255,255,0.35)';
-          var label = 'ρ';
-          if (fresh && state.annotations.rhoMap[na.id + '|' + nb.id] !== undefined) {
-            label = 'ρ = ' + state.annotations.rhoMap[na.id + '|' + nb.id].toFixed(2);
-          }
-          svg += '<path d="M ' + p1.x + ' ' + p1.y + ' Q ' + cqx + ' ' + cqy + ' ' + p2.x + ' ' + p2.y + '" fill="none" stroke="' + arcCol + '" stroke-width="1.5" stroke-dasharray="5,4"/>';
-          svg += arrowHeadAt(p1.x, p1.y, p1.x - cqx, p1.y - cqy, arcCol, 8);
-          svg += arrowHeadAt(p2.x, p2.y, p2.x - cqx, p2.y - cqy, arcCol, 8);
-          svg += '<text x="' + (mx + nx / nl * (off * 0.62)) + '" y="' + (my + ny / nl * (off * 0.62)) + '" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="11.5" font-family="monospace">' + label + '</text>';
-        }
-      }
-    }
-
-    /* edges */
     state.edges.forEach(function(e, ei) {
       var nf = nodeById(e.from), nt = nodeById(e.to);
       if (!nf || !nt) return;
       var color = nf.color;
-      var p1 = rectBoundary(nf, nt, 2), p2 = rectBoundary(nt, nf, 4);
+      var p1 = nodeBoundary(nf, nt, 2), p2 = nodeBoundary(nt, nf, 4);
       var mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
       var nx = -(p2.y - p1.y), ny = p2.x - p1.x;
       var nl = Math.sqrt(nx * nx + ny * ny) || 1;
-      var label = fresh ? (state.annotations.edgeLabels[e.from + '>' + e.to] || '…') : '…';
       var edx = p2.x - p1.x, edy = p2.y - p1.y;
       var elen = Math.sqrt(edx * edx + edy * edy) || 1;
       svg += '<line x1="' + p1.x + '" y1="' + p1.y + '" x2="' + (p2.x - edx / elen * 9) + '" y2="' + (p2.y - edy / elen * 9) + '" stroke="' + color + '" stroke-width="2"/>';
       svg += arrowHeadAt(p2.x, p2.y, edx, edy, color);
-      svg += '<text x="' + (mx + nx / nl * 13) + '" y="' + (my + ny / nl * 13) + '" text-anchor="middle" fill="' + color + '" font-size="12.5" font-weight="700" font-family="monospace">' + escXml(label) + '</text>';
-      svg += '<line class="semb-edge-hit" data-edge="' + ei + '" x1="' + p1.x + '" y1="' + p1.y + '" x2="' + p2.x + '" y2="' + p2.y + '" stroke="rgba(0,0,0,0)" stroke-width="16"><title>Click to remove this path</title></line>';
+      svg += '<text x="' + (mx + nx / nl * 13) + '" y="' + (my + ny / nl * 13) + '" text-anchor="middle" fill="' + color + '" font-size="12.5" font-weight="700" font-family="monospace">' + e.b.toFixed(2) + '</text>';
+      svg += '<line class="semb-edge-hit" data-edge="' + ei + '" x1="' + p1.x + '" y1="' + p1.y + '" x2="' + p2.x + '" y2="' + p2.y + '" stroke="rgba(0,0,0,0)" stroke-width="16"><title>Click to edit this path’s value</title></line>';
     });
 
-    /* nodes */
     state.nodes.forEach(function(nd) {
       var sel = state.selected === nd.id;
+      var isTarget = state.targetId === nd.id;
       svg += '<g class="semb-node" data-node="' + nd.id + '">';
       if (sel) svg += '<rect x="' + (nd.x - NW / 2 - 5) + '" y="' + (nd.y - NH / 2 - 5) + '" width="' + (NW + 10) + '" height="' + (NH + 10) + '" rx="12" fill="none" stroke="' + nd.color + '" stroke-width="1.5" stroke-dasharray="4,4"/>';
-      svg += '<rect x="' + (nd.x - NW / 2) + '" y="' + (nd.y - NH / 2) + '" width="' + NW + '" height="' + NH + '" rx="9" fill="' + (sel ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)') + '" stroke="' + nd.color + '" stroke-width="' + (sel ? 3 : 2) + '"/>';
-      svg += '<text x="' + nd.x + '" y="' + (nd.y + 5) + '" text-anchor="middle" fill="' + nd.color + '" font-size="14.5" font-weight="700" font-family="sans-serif" pointer-events="none">' + escXml(nd.name) + '</text>';
+      svg += '<rect x="' + (nd.x - NW / 2) + '" y="' + (nd.y - NH / 2) + '" width="' + NW + '" height="' + NH + '" rx="9" fill="' + (sel ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)') + '" stroke="' + nd.color + '" stroke-width="' + (sel || isTarget ? 3 : 2) + '"/>';
+      svg += '<text x="' + nd.x + '" y="' + (nd.y + (isTarget ? -1 : 5)) + '" text-anchor="middle" fill="' + nd.color + '" font-size="14.5" font-weight="700" font-family="sans-serif" pointer-events="none">' + escXml(nd.name) + '</text>';
+      if (isTarget) {
+        svg += '<text x="' + nd.x + '" y="' + (nd.y + 16) + '" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="700" font-family="sans-serif" pointer-events="none">◎ TARGET OUTCOME</text>';
+      }
       svg += '</g>';
     });
 
@@ -989,7 +788,7 @@ document.addEventListener('DOMContentLoaded', function() {
     for (var hi = 0; hi < hits.length; hi++) {
       hits[hi].addEventListener('click', function(ev) {
         ev.stopPropagation();
-        removeEdge(+this.getAttribute('data-edge'));
+        focusChipValue(+this.getAttribute('data-edge'));
       });
     }
     svgEl.addEventListener('pointerdown', function(ev) {
@@ -999,15 +798,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  function focusChipValue(i) {
+    var inp = document.querySelector('#semb-chips input[data-eval="' + i + '"]');
+    if (inp) {
+      inp.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      inp.focus();
+      inp.select();
+    }
+  }
+
   function renderChips() {
     var el = document.getElementById('semb-chips');
     if (state.edges.length === 0) {
-      el.innerHTML = '<span class="none">No paths drawn yet — with two or more variables, the saturated model (all correlations free) is estimated.</span>';
+      el.innerHTML = '<span class="none">No paths drawn yet — draw one and type its causal value.</span>';
       return;
     }
     el.innerHTML = state.edges.map(function(e, i) {
       var nf = nodeById(e.from), nt = nodeById(e.to);
       return '<span class="semb-chip">' + escXml(nf.name) + ' → ' + escXml(nt.name) +
+        '<input type="number" step="0.05" min="-1.5" max="1.5" value="' + e.b + '" data-eval="' + i + '" aria-label="Causal value ' + escXml(nf.name) + ' to ' + escXml(nt.name) + '">' +
         '<button type="button" class="flip" data-flip="' + i + '" title="Reverse direction" aria-label="Reverse direction">⇄</button>' +
         '<button type="button" data-chip="' + i + '" title="Remove path" aria-label="Remove path">×</button></span>';
     }).join('');
@@ -1019,6 +828,30 @@ document.addEventListener('DOMContentLoaded', function() {
     for (var f = 0; f < flips.length; f++) {
       flips[f].addEventListener('click', function() { flipEdge(+this.getAttribute('data-flip')); });
     }
+    var vals = el.querySelectorAll('input[data-eval]');
+    for (var v = 0; v < vals.length; v++) {
+      vals[v].addEventListener('input', function() {
+        var val = parseFloat(this.value);
+        setEdgeValue(+this.getAttribute('data-eval'), isFinite(val) ? val : 0, 'chip');
+      });
+    }
+  }
+
+  /* single source of truth for path-value edits; syncs chip + editor */
+  function setEdgeValue(i, v, source) {
+    var e = state.edges[i];
+    if (!e) return;
+    e.b = v;
+    if (source !== 'chip') {
+      var ci = document.querySelector('#semb-chips input[data-eval="' + i + '"]');
+      if (ci) ci.value = v;
+    }
+    if (source !== 'editor') {
+      var eiInp = document.querySelector('#semb-editor input[data-edval="' + i + '"]');
+      if (eiInp) eiInp.value = v;
+    }
+    renderDiagram();
+    scheduleRecompute();
   }
 
   function renderPathBar() {
@@ -1036,17 +869,17 @@ document.addEventListener('DOMContentLoaded', function() {
     var off = state.nodes.length < 2;
     fromSel.disabled = off;
     toSel.disabled = off;
+    document.getElementById('semb-path-val').disabled = off;
     document.getElementById('semb-path-add').disabled = off;
   }
 
   function renderAll() {
     renderDiagram();
     renderChips();
-    renderGrid();
     renderPathBar();
   }
 
-  /* ================= node editor ================= */
+  /* ================= variable editor ================= */
 
   function openEditor(id, focusName) {
     state.editing = id;
@@ -1056,40 +889,91 @@ document.addEventListener('DOMContentLoaded', function() {
     state.editing = null;
     document.getElementById('semb-editor').style.display = 'none';
   }
+  function renderEditorIfOpen() { if (state.editing) renderEditor(); }
 
   function renderEditor(focusName) {
     var nd = nodeById(state.editing);
     var panel = document.getElementById('semb-editor');
     if (!nd) { closeEditor(); return; }
     panel.style.display = '';
-    panel.innerHTML =
-      '<div class="fld"><label>Variable name</label><input type="text" id="semb-ed-name" value="' + escXml(nd.name).replace(/"/g, '&quot;') + '" maxlength="24"></div>' +
+
+    var others = state.nodes.filter(function(o) { return o.id !== nd.id; });
+    var outEdges = {};
+    state.edges.forEach(function(e, i) { if (e.from === nd.id) outEdges[e.to] = i; });
+
+    var html = '<div class="ed-top">' +
+      '<div class="fld"><label class="fl">Name</label><input type="text" id="semb-ed-name" value="' + escXml(nd.name).replace(/"/g, '&quot;') + '" maxlength="24"></div>' +
+      '<label class="ed-row" style="align-self:center;"><input type="checkbox" id="semb-ed-target"' + (state.targetId === nd.id ? ' checked' : '') + '> <span><strong style="color:var(--accent);">Is Target</strong> — the outcome we measure</span></label>' +
+      '<span style="flex:1;"></span>' +
       '<button class="ebtn danger" id="semb-ed-del" type="button">Delete variable</button>' +
-      '<button class="ebtn" id="semb-ed-done" type="button">Done</button>';
+      '<button class="ebtn" id="semb-ed-done" type="button">Done</button>' +
+      '</div>';
+
+    html += '<div class="ed-section"><label class="fl">Where it points to &mdash; and each path&rsquo;s causal value</label>';
+    if (others.length === 0) {
+      html += '<p class="ed-note">No other variables yet — add another variable first.</p>';
+    } else {
+      html += '<div class="ed-rows">' + others.map(function(o) {
+        var has = outEdges[o.id] !== undefined;
+        var b = has ? state.edges[outEdges[o.id]].b : 0.5;
+        return '<span class="ed-row"><label class="ed-row" style="gap:6px;"><input type="checkbox" data-edpoint="' + o.id + '"' + (has ? ' checked' : '') + '> → ' + escXml(o.name) + '</label>' +
+          '<input type="number" step="0.05" min="-1.5" max="1.5" value="' + b + '"' + (has ? ' data-edval="' + outEdges[o.id] + '"' : ' disabled') + ' aria-label="Causal value to ' + escXml(o.name) + '"></span>';
+      }).join('') + '</div>';
+      html += '<p class="ed-note">Tick a variable to draw the path, then set its causal coefficient. The implied correlations update instantly.</p>';
+    }
+    html += '</div>';
+
+    panel.innerHTML = html;
 
     var nameInput = document.getElementById('semb-ed-name');
     nameInput.addEventListener('input', function(e) {
       nd.name = e.target.value || 'unnamed';
       renderDiagram();
       renderChips();
-      renderGrid();
       renderPathBar();
+      scheduleRecompute();
     });
     document.getElementById('semb-ed-del').addEventListener('click', function() { deleteNode(nd.id); });
     document.getElementById('semb-ed-done').addEventListener('click', closeEditor);
+    document.getElementById('semb-ed-target').addEventListener('change', function(e) {
+      state.targetId = e.target.checked ? nd.id : null;
+      renderDiagram();
+      scheduleRecompute();
+    });
+
+    var pointChecks = panel.querySelectorAll('input[data-edpoint]');
+    for (var pi = 0; pi < pointChecks.length; pi++) {
+      pointChecks[pi].addEventListener('change', function(e) {
+        var toId = this.getAttribute('data-edpoint');
+        if (e.target.checked) {
+          var ok = addDirectedPath(nd.id, toId, 0.5, true);
+          if (!ok) { e.target.checked = false; return; }
+          renderEditor();
+        } else {
+          var idx = -1;
+          state.edges.forEach(function(ed, i2) { if (ed.from === nd.id && ed.to === toId) idx = i2; });
+          if (idx >= 0) removeEdge(idx);
+        }
+      });
+    }
+    var valInputs = panel.querySelectorAll('input[data-edval]');
+    for (var vi = 0; vi < valInputs.length; vi++) {
+      valInputs[vi].addEventListener('input', function() {
+        var v = parseFloat(this.value);
+        setEdgeValue(+this.getAttribute('data-edval'), isFinite(v) ? v : 0, 'editor');
+      });
+    }
+
     if (focusName) { nameInput.focus(); nameInput.select(); }
   }
 
   function deleteNode(id) {
     state.nodes = state.nodes.filter(function(nd) { return nd.id !== id; });
     state.edges = state.edges.filter(function(e) { return e.from !== id && e.to !== id; });
-    Object.keys(state.corr).forEach(function(k) {
-      if (k.split('|').indexOf(id) !== -1) delete state.corr[k];
-    });
     if (state.selected === id) state.selected = null;
+    if (state.targetId === id) state.targetId = null;
     if (state.editing === id) closeEditor();
-    bump();
-    scheduleEstimate();
+    scheduleRecompute();
     renderAll();
   }
 
@@ -1118,7 +1002,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var svgEl = document.getElementById('semb-svg');
     var r = svgEl.getBoundingClientRect();
     nd.x = Math.max(NW / 2 + 8, Math.min(VW - NW / 2 - 8, drag.origX + dx * VW / r.width));
-    nd.y = Math.max(NH / 2 + 8, Math.min(VH - NH / 2 - 8, drag.origY + dy * VH / r.height));
+    nd.y = Math.max(NH / 2 + 14, Math.min(VH - NH / 2 - 14, drag.origY + dy * VH / r.height));
     renderDiagram();
   }
 
@@ -1145,7 +1029,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (state.selected === null) {
       state.selected = id;
-      setStatus('Selected “' + nodeById(id).name + '” — click another variable to draw a path, or double-click to rename/delete.', '');
+      setStatus('Selected “' + nodeById(id).name + '” — click another variable to draw a path, or double-click to edit.', '');
       renderDiagram();
       return;
     }
@@ -1156,25 +1040,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     var from = state.selected, to = id;
     state.selected = null;
-    /* canvas-only convenience: clicking an existing path's endpoints removes it */
     var sameIdx = -1;
     state.edges.forEach(function(e, i) {
       if (e.from === from && e.to === to) sameIdx = i;
     });
     if (sameIdx >= 0) {
-      state.edges.splice(sameIdx, 1);
-      setStatus('Removed ' + nodeById(from).name + ' → ' + nodeById(to).name + '.', '');
-      bump(); scheduleEstimate(); renderDiagram(); renderChips();
+      focusChipValue(sameIdx);
+      renderDiagram();
       return;
     }
-    addDirectedPath(from, to);
+    if (addDirectedPath(from, to, 0.5)) {
+      focusChipValue(state.edges.length - 1);
+    }
   }
 
-  /* Shared by the canvas gesture and the From → To selector */
-  function addDirectedPath(from, to) {
+  /* Shared by canvas gesture, From→To bar, and editor checkboxes.
+     Structural validation: DAG cycle check only. */
+  function addDirectedPath(from, to, b, quiet) {
     if (from === to) {
       setStatus('Pick two different variables for a path.', 'err');
-      return;
+      return false;
     }
     var sameIdx = -1, revIdx = -1;
     state.edges.forEach(function(e, i) {
@@ -1182,27 +1067,35 @@ document.addEventListener('DOMContentLoaded', function() {
       if (e.from === to && e.to === from) revIdx = i;
     });
     if (sameIdx >= 0) {
-      setStatus('That path is already drawn: ' + nodeById(from).name + ' → ' + nodeById(to).name + '.', 'warn');
-      return;
+      setStatus('That path is already drawn: ' + nodeById(from).name + ' → ' + nodeById(to).name + ' — edit its value on its chip.', 'warn');
+      return true;
     }
     var candidate = state.edges.slice();
-    if (revIdx >= 0) candidate.splice(revIdx, 1);
-    candidate.push({ from: from, to: to });
+    var carried = b;
+    if (revIdx >= 0) {
+      carried = (typeof b === 'number' && isFinite(b)) ? b : state.edges[revIdx].b;
+      candidate.splice(revIdx, 1);
+    }
+    candidate.push({ from: from, to: to, b: (typeof carried === 'number' && isFinite(carried)) ? carried : 0.5 });
     if (!topoOK(state.nodes, candidate)) {
       setStatus('That path would create a cycle — structural models must be a recursive DAG.', 'err');
       renderDiagram();
-      return;
+      return false;
     }
     state.edges = candidate;
-    setStatus((revIdx >= 0 ? 'Reversed the existing path: now ' : 'Added path ') + nodeById(from).name + ' → ' + nodeById(to).name + '.', 'ok');
-    bump(); scheduleEstimate(); renderDiagram(); renderChips();
+    setStatus((revIdx >= 0 ? 'Reversed the existing path: now ' : 'Added path ') + nodeById(from).name + ' → ' + nodeById(to).name + ' — type its causal value on its chip.', 'ok');
+    scheduleRecompute();
+    renderDiagram();
+    renderChips();
+    if (!quiet) renderEditorIfOpen();
+    return true;
   }
 
   function flipEdge(i) {
     var e = state.edges[i];
     if (!e) return;
     var candidate = state.edges.map(function(ee, j) {
-      return j === i ? { from: e.to, to: e.from } : ee;
+      return j === i ? { from: e.to, to: e.from, b: e.b } : ee;
     });
     if (!topoOK(state.nodes, candidate)) {
       setStatus('Reversing ' + nodeById(e.from).name + ' → ' + nodeById(e.to).name + ' would create a cycle.', 'err');
@@ -1210,13 +1103,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     state.edges = candidate;
     setStatus('Reversed direction: now ' + nodeById(e.to).name + ' → ' + nodeById(e.from).name + '.', 'ok');
-    bump(); scheduleEstimate(); renderDiagram(); renderChips();
+    scheduleRecompute();
+    renderDiagram();
+    renderChips();
+    renderEditorIfOpen();
   }
 
   function removeEdge(i) {
     if (!state.edges[i]) return;
     state.edges.splice(i, 1);
-    bump(); scheduleEstimate(); renderDiagram(); renderChips();
+    scheduleRecompute();
+    renderDiagram();
+    renderChips();
+    renderEditorIfOpen();
   }
 
   /* ================= toolbar ================= */
@@ -1231,50 +1130,56 @@ document.addEventListener('DOMContentLoaded', function() {
       id: id,
       name: name,
       x: Math.min(VW - NW / 2 - 10, slot.x + jitter),
-      y: Math.min(VH - NH / 2 - 10, slot.y + jitter),
+      y: Math.min(VH - NH / 2 - 14, slot.y + jitter),
       color: PALETTE[(state.nodeCounter - 1) % PALETTE.length]
     });
-    bump();
     openEditor(id, true);
-    scheduleEstimate();
+    scheduleRecompute();
     renderAll();
   });
 
   document.getElementById('semb-path-add').addEventListener('click', function() {
     var from = document.getElementById('semb-path-from').value;
     var to = document.getElementById('semb-path-to').value;
+    var v = parseFloat(document.getElementById('semb-path-val').value);
     if (!from || !to) return;
-    addDirectedPath(from, to);
+    addDirectedPath(from, to, isFinite(v) ? v : 0.5);
   });
 
   document.getElementById('semb-n').addEventListener('input', function(e) {
     var v = parseInt(e.target.value, 10);
     if (isFinite(v) && v >= 10) {
       state.n = v;
-      bump();
-      scheduleEstimate();
+      scheduleRecompute();
     }
   });
 
   document.getElementById('semb-save-a').addEventListener('click', function() {
-    if (!state.currentFit) {
-      setStatus('Nothing to save yet — create at least two variables so a model is estimated.', 'err');
+    if (state.nodes.length < 2) {
+      setStatus('Draw a model first (at least two variables).', 'err');
+      return;
+    }
+    var ids = state.nodes.map(function(nd) { return nd.id; });
+    var out = impliedCorr(ids, state.edges);
+    if (out.error) {
+      setStatus('Fix the current model before saving it (its implied matrix is invalid).', 'err');
       return;
     }
     state.modelA = {
-      spec: JSON.parse(JSON.stringify(state.currentFit.spec)),
-      exoIds: state.currentFit.exoIds.slice(),
-      desc: state.currentFit.desc,
-      chi2: state.currentFit.chi2, df: state.currentFit.df, p: state.currentFit.p,
-      aic: state.currentFit.aic, bic: state.currentFit.bic
+      ids: ids.slice(),
+      edgeKeys: state.edges.map(function(e) { return e.from + '>' + e.to; }).sort().join(','),
+      desc: state.edges.length === 0 ? 'No paths' : state.edges.map(function(e) {
+        return nodeById(e.from).name + '→' + nodeById(e.to).name + ' (' + e.b.toFixed(2) + ')';
+      }).join(', '),
+      S: out.Phi.map(function(r) { return r.slice(); })
     };
-    setStatus('Saved as Model A: ' + state.modelA.desc + ' — now change the structure and the Δχ² comparison updates live.', 'ok');
-    renderComparison();
+    setStatus('Saved as Model A — its implied matrix is now the “data”. Redraw the structure to test a rival Model B.', 'ok');
+    renderComparison(); /* saving changes nothing else — keep the confirmation visible */
   });
 
   /* ================= boot ================= */
   renderAll();
-  scheduleEstimate();
+  scheduleRecompute();
 });
 </script>
 
